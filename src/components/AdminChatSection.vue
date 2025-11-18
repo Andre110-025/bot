@@ -212,7 +212,7 @@ watch(chatMessages, () => {
   </div>
 </template>
 
-<style scoped>
+<style>
 .cdUser011011-chat-container {
   display: flex;
   flex-direction: column;

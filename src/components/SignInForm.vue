@@ -94,7 +94,7 @@ const handleForm = () => {
   </div>
 </template>
 
-<style scoped>
+<style>
 .cdUser011011-container {
   /* min-height: 100vh; */
   display: flex;
