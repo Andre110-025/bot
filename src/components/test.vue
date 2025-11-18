@@ -143,4 +143,32 @@ const sendToAdmin = async () => {
 onBeforeUnmount(() => {
   Object.values(charTimers).forEach((t) => clearTimeout(t))
 })
+
+// src/main.js
+import { defineCustomElement } from 'vue'
+import AppVue from './App.vue'
+
+// Your existing component imports...
+import SignInForm from './components/SignInForm.vue'
+import AdminChatSection from './components/AdminChatSection.vue'
+// ...etc
+
+// Convert them if you want
+const SignInElement = defineCustomElement(SignInForm)
+const AdminChatElement = defineCustomElement(AdminChatSection)
+customElements.define('sign-in-form', SignInElement)
+customElements.define('admin-chat-section', AdminChatElement)
+
+// THE FIX – add this block:
+const ChatbotElement = defineCustomElement(AppVue, {
+  // This keeps the shadow DOM (perfect isolation)
+  // BUT also injects all <style> tags into <head> so you can actually see them immediately
+  styles: AppVue.styles, // ← THIS IS THE MAGIC LINE
+})
+
+const CUSTOM_TAG_NAME = 'chatbot-widget'
+if (!customElements.get(CUSTOM_TAG_NAME)) {
+  customElements.define(CUSTOM_TAG_NAME, ChatbotElement)
+  console.log(`Chatbot registered as <${CUSTOM_TAG_NAME}>`)
+}
 </script>
