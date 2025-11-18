@@ -1,0 +1,190 @@
+<script setup>
+import { ref, computed, reactive } from 'vue'
+import LoadingAnime from './LoadingAnime.vue'
+
+const emit = defineEmits(['form-complete'])
+
+const loading = ref(false)
+const form = reactive({
+  name: '',
+  email: '',
+  phone: '',
+})
+
+const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
+const isEmailValid = computed(() => {
+  return emailRegex.test(form.email.trim())
+})
+
+const isFormValid = computed(() => {
+  return form.name.trim() !== '' && isEmailValid.value && form.phone.length >= 10
+})
+
+const handleForm = () => {
+  if (!isFormValid.value) return
+
+  loading.value = true
+
+  setTimeout(() => {
+    const token = Math.random().toString(36).substring(2) + Date.now().toString(36)
+    console.log('Generated token:', token)
+
+    const expiresAt = Date.now() + 7 * 24 * 60 * 60 * 1000
+
+    localStorage.setItem('chatUser', JSON.stringify({ ...form, token, expiresAt }))
+    loading.value = false
+    emit('form-complete')
+  }, 3000)
+}
+</script>
+
+<template>
+  <div class="cdUser011011-container">
+    <div class="cdUser011011-card">
+      <h2 class="cdUser011011-title">
+        <svg
+          class="cdUser011011-title-svg"
+          xmlns="http://www.w3.org/2000/svg"
+          width="32"
+          height="32"
+          viewBox="0 0 24 24"
+        >
+          <defs>
+            <!-- Define the gradient -->
+            <linearGradient id="cdUser011011Gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#10b981" />
+              <stop offset="100%" stop-color="#059669" />
+            </linearGradient>
+          </defs>
+
+          <!-- Use the gradient for the icon -->
+          <path
+            fill="url(#cdUser011011Gradient)"
+            d="M22.62 3.783c-1.115-1.811-4.355-2.604-6.713-.265c-.132.135-.306.548.218 1.104c1.097 1.149 6.819 7.046 4.702 12.196c-1.028 2.504-3.953 2.073-5.052-2.076a23.2 23.2 0 0 1-.473-9.367s.105-.394-.065-.52c-.117-.087-.305-.05-.547.33c-.06.096-.048.076-.106.178l-.003.002c-1.622 2.688-3.272 5.874-4.049 7.07c.38-1.803-.101-4.283-.85-6.359l-.142-.375c-.692-1.776-1.524-2.974-1.776-3.245c-.03-.033-.105-.094-.353-.094H.398c-.49 0-.448.412-.293.561c1.862 2.178 7.289 10.343 4.773 18.355c-.194.619.11.944.612.305c2.206-2.81 4.942-7.598 6.925-11.187c-.437 1.245-.822 2.63-1.028 4.083c-.435 3.064.487 5.37 1.162 6.58c.345.619.803.998 1.988.824c6.045-.885 8.06-6.117 8.805-8.77c1.357-4.839.363-7.568-.722-9.33"
+          />
+        </svg>
+
+        <span>elcome</span>
+      </h2>
+      <p class="cdUser011011-subtitle">Please provide your info to start chatting with us</p>
+
+      <form @submit.prevent="handleForm" class="cdUser011011-form">
+        <div class="cdUser011011-input-group">
+          <label>Full Name</label>
+          <input v-model="form.name" type="text" />
+        </div>
+
+        <div class="cdUser011011-input-group">
+          <label>Email Address</label>
+          <input v-model="form.email" type="email" />
+        </div>
+
+        <div class="cdUser011011-input-group">
+          <label>Phone Number</label>
+          <input v-model="form.phone" type="tel" />
+        </div>
+
+        <button type="submit" :disabled="!isFormValid || loading" class="cdUser011011-btn">
+          <LoadingAnime v-if="loading" />
+          <span v-if="!loading">Start Chat</span>
+        </button>
+      </form>
+    </div>
+  </div>
+</template>
+
+<style scoped>
+.cdUser011011-container {
+  /* min-height: 100vh; */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f9fafb;
+  margin-top: 15px;
+}
+
+.cdUser011011-card {
+  width: 100%;
+  max-width: 400px;
+  background: #fff;
+  /* border: 1px solid #e5e7eb; */
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+}
+
+.cdUser011011-title {
+  text-align: center;
+  font-size: 1.5rem;
+  color: #111827;
+  font-weight: 600;
+  margin-bottom: 6px;
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+}
+
+.cdUser011011-title-svg {
+  fill: #10b981;
+}
+
+.cdUser011011-subtitle {
+  text-align: center;
+  color: #6b7280;
+  font-size: 0.9rem;
+  margin-bottom: 20px;
+}
+
+.cdUser011011-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  bottom: 10px;
+}
+
+.cdUser011011-input-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.cdUser011011-input-group label {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: #374151;
+  margin-bottom: 4px;
+}
+
+.cdUser011011-input-group input {
+  padding: 8px 10px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  outline: none;
+  transition: border-color 0.2s ease;
+}
+
+.cdUser011011-input-group input:focus {
+  border-color: #14b8a6;
+  box-shadow: 0 0 0 2px rgba(20, 184, 166, 0.2);
+}
+
+.cdUser011011-btn {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: white;
+  font-weight: 600;
+  border: none;
+  padding: 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.2s ease;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 6px;
+}
+
+.cdUser011011-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+</style>
