@@ -379,6 +379,19 @@ onBeforeUnmount(() => {
   z-index: 9999;
   font-family:
     -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  /* Reset any inherited styles */
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* Apply box-sizing to all child elements */
+.cdUser011011-wrapper *,
+.cdUser011011-wrapper *::before,
+.cdUser011011-wrapper *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
 }
 
 /* === Floating Bubble === */
@@ -398,6 +411,8 @@ onBeforeUnmount(() => {
   position: relative;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   animation: cdUser011011-bounceIn 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  margin: 0;
+  padding: 0;
 }
 
 .cdUser011011-bubble:hover {
@@ -415,6 +430,7 @@ onBeforeUnmount(() => {
   width: 30px;
   height: 30px;
   filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1));
+  display: block;
 }
 
 /* Ping Animation */
@@ -428,6 +444,8 @@ onBeforeUnmount(() => {
   background: #34d399;
   border-radius: 50%;
   border: 2px solid #fff;
+  margin: 0;
+  padding: 0;
 }
 
 .cdUser011011-ping {
@@ -481,6 +499,8 @@ onBeforeUnmount(() => {
   flex-direction: column;
   overflow: hidden;
   backdrop-filter: blur(10px);
+  margin: 0;
+  padding: 0;
 }
 
 /* === Header === */
@@ -492,12 +512,15 @@ onBeforeUnmount(() => {
   justify-content: space-between;
   align-items: center;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  flex-shrink: 0;
 }
 
 .cdUser011011-header-left {
   display: flex;
   align-items: center;
   gap: 12px;
+  margin: 0;
+  padding: 0;
 }
 
 .cdUser011011-avatar {
@@ -511,13 +534,17 @@ onBeforeUnmount(() => {
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  margin: 0;
+  padding: 0;
 }
 
 .cdUser011011-title {
   font-size: 1.125rem;
   font-weight: 700;
   margin: 0;
+  padding: 0;
   letter-spacing: -0.01em;
+  line-height: 1.2;
 }
 
 .cdUser011011-title-highlight {
@@ -528,8 +555,10 @@ onBeforeUnmount(() => {
 .cdUser011011-subtitle {
   font-size: 0.75rem;
   margin: 2px 0 0 0;
+  padding: 0;
   opacity: 0.9;
   font-weight: 400;
+  line-height: 1.2;
 }
 
 .cdUser011011-close {
@@ -545,6 +574,9 @@ onBeforeUnmount(() => {
   align-items: center;
   justify-content: center;
   transition: all 0.2s ease;
+  margin: 0;
+  padding: 0;
+  flex-shrink: 0;
 }
 
 .cdUser011011-close:hover {
@@ -557,8 +589,11 @@ onBeforeUnmount(() => {
   background: linear-gradient(to bottom, #f9fafb 0%, #ffffff 100%);
   flex: 1;
   overflow-y: auto;
+  overflow-x: hidden;
   padding: 1.5rem 1rem;
   scroll-behavior: smooth;
+  margin: 0;
+  min-height: 0; /* Important for flex children */
 }
 
 .cdUser011011-body::-webkit-scrollbar {
@@ -582,12 +617,16 @@ onBeforeUnmount(() => {
   display: flex;
   flex-direction: column;
   gap: 1rem;
+  margin: 0;
+  padding: 0;
 }
 
 .cdUser011011-message-row {
   display: flex;
   align-items: flex-end;
   animation: cdUser011011-messageSlide 0.3s ease;
+  margin: 0;
+  padding: 0;
 }
 
 @keyframes cdUser011011-messageSlide {
@@ -620,18 +659,19 @@ onBeforeUnmount(() => {
   justify-content: center;
   flex-shrink: 0;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+  padding: 0;
 }
 
 .cdUser011011-avatar-bot {
   background: linear-gradient(135deg, #1f2937 0%, #111827 100%);
   color: #fff;
-  margin-right: 10px;
+  margin: 0 10px 0 0;
 }
 
 .cdUser011011-avatar-user {
   background: linear-gradient(135deg, #10b981 0%, #059669 100%);
   color: #fff;
-  margin-left: 10px;
+  margin: 0 0 0 10px;
 }
 
 /* === Message Bubbles === */
@@ -642,8 +682,10 @@ onBeforeUnmount(() => {
   line-height: 1.5;
   max-width: 75%;
   word-wrap: break-word;
+  word-break: break-word;
   position: relative;
   animation: cdUser011011-messagePop 0.2s ease;
+  margin: 0;
 }
 
 @keyframes cdUser011011-messagePop {
@@ -679,6 +721,7 @@ onBeforeUnmount(() => {
   align-items: center;
   gap: 4px;
   padding: 2px 0;
+  margin: 0;
 }
 
 .cdUser011011-typing-dot {
@@ -688,6 +731,8 @@ onBeforeUnmount(() => {
   background: rgba(255, 255, 255, 0.6);
   border-radius: 50%;
   animation: cdUser011011-typingBounce 1.4s infinite ease-in-out both;
+  margin: 0;
+  padding: 0;
 }
 
 .cdUser011011-typing-dot:nth-child(1) {
@@ -721,6 +766,7 @@ onBeforeUnmount(() => {
   text-align: center;
   padding: 2rem;
   gap: 1rem;
+  margin: 0;
 }
 
 .cdUser011011-empty-icon {
@@ -732,6 +778,8 @@ onBeforeUnmount(() => {
   align-items: center;
   justify-content: center;
   color: #9ca3af;
+  margin: 0;
+  padding: 0;
 }
 
 .cdUser011011-empty-text {
@@ -739,12 +787,16 @@ onBeforeUnmount(() => {
   font-weight: 600;
   color: #374151;
   margin: 0;
+  padding: 0;
+  line-height: 1.4;
 }
 
 .cdUser011011-empty-subtext {
   font-size: 0.875rem;
   color: #9ca3af;
   margin: 0;
+  padding: 0;
+  line-height: 1.4;
 }
 
 /* === Footer === */
@@ -754,15 +806,21 @@ onBeforeUnmount(() => {
   background: #ffffff;
   border-top: 1px solid #e5e7eb;
   box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.04);
+  margin: 0;
+  padding: 0;
+  flex-shrink: 0;
 }
 
 .cdUser011011-footer-main {
-  padding: 5px;
+  padding: 0.75rem;
+  margin: 0;
 }
 
 .cdUser011011-input-wrapper {
   position: relative;
   width: 100%;
+  margin: 0;
+  padding: 0;
 }
 
 .cdUser011011-footer-input {
@@ -775,6 +833,8 @@ onBeforeUnmount(() => {
   transition: all 0.2s ease;
   background: #f9fafb;
   font-family: inherit;
+  margin: 0;
+  line-height: 1.5;
 }
 
 .cdUser011011-footer-input:focus {
@@ -806,6 +866,9 @@ onBeforeUnmount(() => {
   justify-content: center;
   transition: all 0.2s ease;
   box-shadow: 0 2px 6px rgba(16, 185, 129, 0.3);
+  margin: 0;
+  padding: 0;
+  flex-shrink: 0;
 }
 
 .cdUser011011-footer-send:hover {
@@ -825,7 +888,7 @@ onBeforeUnmount(() => {
   padding: 8px 18px;
   cursor: pointer;
   font-size: 0.9rem;
-  margin-top: 6px;
+  margin: 6px 0 0 0;
   font-weight: 500;
   transition: all 0.3s ease;
   display: inline-block;
@@ -847,6 +910,7 @@ onBeforeUnmount(() => {
   padding: 0.75rem 1rem;
   background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
   border-top: 1px solid #e5e7eb;
+  margin: 0;
 }
 
 .cdUser011011-toggle-btn {
@@ -865,6 +929,8 @@ onBeforeUnmount(() => {
   color: #6b7280;
   transition: all 0.2s ease;
   font-family: inherit;
+  margin: 0;
+  line-height: 1.2;
 }
 
 .cdUser011011-toggle-btn:hover {
@@ -892,6 +958,8 @@ onBeforeUnmount(() => {
 
 .cdUser011011-toggle-btn svg {
   flex-shrink: 0;
+  margin: 0;
+  padding: 0;
 }
 
 /* === Transitions === */
