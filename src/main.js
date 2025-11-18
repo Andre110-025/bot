@@ -26,7 +26,9 @@ const getIdElement = defineCustomElement(getUserId)
 // Vue/Vite's bundling for a cleaner output.
 
 // 4. Define the Main Chatbot Custom Element
-const ChatbotElement = defineCustomElement(AppVue)
+const ChatbotElement = defineCustomElement(AppVue, {
+  shadow: false,
+})
 
 // 5. Register the Main Chatbot Tag
 const CUSTOM_TAG_NAME = 'chatbot-widget'
