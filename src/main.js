@@ -65,6 +65,9 @@ const CUSTOM_TAG_NAME = 'chatbot-widget'
 if (!customElements.get(CUSTOM_TAG_NAME)) {
   customElements.define(CUSTOM_TAG_NAME, ChatbotElement)
   console.log(`Chatbot registered as <${CUSTOM_TAG_NAME}>`)
+
+  const scriptDomain = getScriptBaseUrl()
+  loadWidgetStyles(scriptDomain)
 }
 
 // 6. Optional: Export for manual instantiation
