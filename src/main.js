@@ -15,6 +15,10 @@ const SignInElement = defineCustomElement(SignInForm)
 const AdminChatElement = defineCustomElement(AdminChatSection)
 const getIdElement = defineCustomElement(getUserId)
 
+customElements.define('sign-in-form', SignInElement)
+customElements.define('admin-chat-section', AdminChatElement)
+customElements.define('get-user-id', getIdElement)
+
 // 3. Register Sub-Components (Optional but recommended for consistency)
 // The tag names must match the way you use them in App.vue's template
 // or you must register them manually inside App.vue's component property.
@@ -27,15 +31,11 @@ const getIdElement = defineCustomElement(getUserId)
 // 4. Define the Main Chatbot Custom Element
 const ChatbotElement = defineCustomElement(AppVue, {
   styles: AppVue.styles,
+  props: ['website', 'api'],
 })
 
 // 5. Register the Main Chatbot Tag
-const CUSTOM_TAG_NAME = 'chatbot-widget'
-
-if (!customElements.get(CUSTOM_TAG_NAME)) {
-  customElements.define(CUSTOM_TAG_NAME, ChatbotElement)
-  console.log(`Chatbot registered as <${CUSTOM_TAG_NAME}>`)
-}
+customElements.define('chatbot-widget', ChatbotElement)
 
 // 6. Optional: Export for manual instantiation
 export default ChatbotElement
