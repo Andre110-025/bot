@@ -26,27 +26,53 @@
 // })
 
 // vite.config.js
+// import { defineConfig } from 'vite'
+// import vue from '@vitejs/plugin-vue'
+// import { resolve } from 'path'
+
+// export default defineConfig({
+//   plugins: [
+//     vue(), // This plugin is essential for handling .vue files
+//   ],
+//   build: {
+//     // 1. Output as a library (single file)
+//     lib: {
+//       entry: resolve(__dirname, 'src/main.js'), // Point to the new entry file
+//       name: 'ChatbotWidget',
+//       formats: ['iife'], // IIFE is best for a simple, global drop-in script
+//       fileName: 'chatbot-widget',
+//     },
+
+//     // 2. Inline all CSS into the JS file
+//     cssCodeSplit: false,
+
+//     // 3. Clear the output directory
+//     emptyOutDir: true,
+//   },
+// })
+
+// vite.config.js
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
-import { resolve } from 'path'
 
 export default defineConfig({
-  plugins: [
-    vue(), // This plugin is essential for handling .vue files
-  ],
+  // Add the define configuration here
+  define: {
+    'process.env.NODE_ENV': '"production"',
+  },
+
+  // existing base setting (keep this for Netlify)
+  base: '/',
+
+  plugins: [vue()],
+
   build: {
-    // 1. Output as a library (single file)
     lib: {
-      entry: resolve(__dirname, 'src/main.js'), // Point to the new entry file
+      entry: 'src/main.js', // Or wherever your entry file is
       name: 'ChatbotWidget',
-      formats: ['iife'], // IIFE is best for a simple, global drop-in script
       fileName: 'chatbot-widget',
+      formats: ['iife'],
     },
-
-    // 2. Inline all CSS into the JS file
-    cssCodeSplit: false,
-
-    // 3. Clear the output directory
-    emptyOutDir: true,
+    // ... other build options
   },
 })
