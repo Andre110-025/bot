@@ -1,6 +1,7 @@
 // src/main.js - The new entry file for the custom element build
 import { defineCustomElement } from 'vue'
 import AppVue from './App.vue'
+import './assets/main.css'
 
 // IMPORTANT: Define all sub-components used by App.vue as custom elements
 // so they are properly bundled and rendered within the Shadow DOM.
