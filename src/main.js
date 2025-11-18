@@ -1,46 +1,62 @@
-// src/main.js - The new entry file for the custom element build
-import { defineCustomElement } from 'vue'
-import AppVue from './App.vue'
+import { createApp } from 'vue'
+import App from './App.vue'
 
-// IMPORTANT: Define all sub-components used by App.vue as custom elements
-// so they are properly bundled and rendered within the Shadow DOM.
+// Store initialized widgets to prevent double-mounting
+const initializedWidgets = new WeakSet()
 
-// 1. Import Sub-Components
-import SignInForm from './components/SignInForm.vue'
-import AdminChatSection from './components/AdminChatSection.vue'
-import getUserId from './components/utils/userId'
+// Auto-initialize function
+function initChatbot() {
+  // Find all chatbot-widget elements
+  const widgets = document.querySelectorAll('chatbot-widget')
 
-// 2. Convert Sub-Components to Custom Elements
-const SignInElement = defineCustomElement(SignInForm)
-const AdminChatElement = defineCustomElement(AdminChatSection)
-const getIdElement = defineCustomElement(getUserId)
+  widgets.forEach((widget) => {
+    // Skip if already initialized
+    if (initializedWidgets.has(widget)) {
+      return
+    }
 
-// customElements.define('sign-in-form', SignInElement)
-// customElements.define('admin-chat-section', AdminChatElement)
-// customElements.define('get-user-id', getIdElement)
+    const website = widget.getAttribute('website') || 'N/A'
+    const api = widget.getAttribute('api') || 'N/A'
 
-// 3. Register Sub-Components (Optional but recommended for consistency)
-// The tag names must match the way you use them in App.vue's template
-// or you must register them manually inside App.vue's component property.
-// However, since they are standard Vue components in App.vue,
-// they should be bundled correctly by Vite/Rollup.
+    // Create a div to mount Vue app
+    const mountPoint = document.createElement('div')
+    widget.appendChild(mountPoint)
 
-// We will skip global registration of sub-components here and rely on
-// Vue/Vite's bundling for a cleaner output.
+    // Create and mount Vue app
+    const app = createApp(App, {
+      website,
+      api,
+    })
 
-// 4. Define the Main Chatbot Custom Element
-const ChatbotElement = defineCustomElement(AppVue, {
-  shadow: false,
-  props: ['website', 'api'],
-})
+    app.mount(mountPoint)
 
-// 5. Register the Main Chatbot Tag
-const CUSTOM_TAG_NAME = 'chatbot-widget'
-
-if (!customElements.get(CUSTOM_TAG_NAME)) {
-  customElements.define(CUSTOM_TAG_NAME, ChatbotElement)
-  console.log(`Chatbot registered as <${CUSTOM_TAG_NAME}>`)
+    // Mark as initialized
+    initializedWidgets.add(widget)
+  })
 }
 
-// 6. Optional: Export for manual instantiation
-export default ChatbotElement
+// Initialize immediately if DOM is ready, otherwise wait
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initChatbot)
+} else {
+  // DOM is already ready, but give script a tick to ensure everything is loaded
+  setTimeout(initChatbot, 0)
+}
+
+// Watch for new chatbot-widget elements (optional but useful)
+if (typeof MutationObserver !== 'undefined') {
+  const observer = new MutationObserver(() => {
+    initChatbot() // Re-run init, it will skip already initialized widgets
+  })
+
+  // Start observing after a short delay to ensure DOM is ready
+  setTimeout(() => {
+    observer.observe(document.body, {
+      childList: true,
+      subtree: true,
+    })
+  }, 100)
+}
+
+// Expose for manual re-initialization if needed
+window.initChatbot = initChatbot
