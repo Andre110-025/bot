@@ -40,25 +40,48 @@ const togglePopup = () => {
   showPopup.value = !showPopup.value
 }
 
-const scrollToBottom = async () => {
-  await nextTick()
-  setTimeout(() => {
-    if (chatContainer.value) {
-      chatContainer.value.scrollTop = chatContainer.value.scrollHeight
-    }
-  }, 50)
+// const scrollToBottom = async () => {
+//   await nextTick()
+//   setTimeout(() => {
+//     if (chatContainer.value) {
+//       chatContainer.value.scrollTop = chatContainer.value.scrollHeight
+//     }
+//   }, 50)
+// }
+
+const scrollToBottom = () => {
+  nextTick(() => {
+    const el = chatContainer.value
+    if (!el) return
+
+    // Try multiple methods – one will work
+    el.scrollTop = el.scrollHeight
+
+    setTimeout(() => {
+      el.scrollTop = el.scrollHeight
+
+      // Nuclear option: scroll the last message into view
+      const lastMsg = el.lastElementChild
+      if (lastMsg) {
+        lastMsg.scrollIntoView({ behavior: 'auto', block: 'end' })
+      }
+    }, 50)
+  })
 }
 
-watch(
-  messages,
-  async () => {
-    await nextTick()
-    if (chatContainer.value) {
-      chatContainer.value.scrollTop = chatContainer.value.scrollHeight
-    }
-  },
-  { deep: true },
-)
+// watch(
+//   messages,
+//   async () => {
+//     await nextTick()
+//     if (chatContainer.value) {
+//       chatContainer.value.scrollTop = chatContainer.value.scrollHeight
+//     }
+//   },
+//   { deep: true },
+// )
+
+watch(messages, scrollToBottom, { deep: true })
+watch(displayedTexts, scrollToBottom, { deep: true })
 
 const typeMessage = (index, fullText) => {
   return new Promise((resolve) => {
