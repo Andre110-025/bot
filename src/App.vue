@@ -115,6 +115,7 @@ const getResponse = async (inputText) => {
       'please contact support for more details',
       'support team',
       'contacting support',
+      'What specific information are you looking for?',
     ]
 
     const shouldShowButton = terms.some((term) => reply.toLowerCase().includes(term.toLowerCase()))
@@ -545,6 +546,7 @@ onBeforeUnmount(() => {
   padding: 0;
   letter-spacing: -0.01em;
   line-height: 1.2;
+  margin-right: 100px;
 }
 
 .cdUser011011-title-highlight {
@@ -559,6 +561,7 @@ onBeforeUnmount(() => {
   opacity: 0.9;
   font-weight: 400;
   line-height: 1.2;
+  color: white;
 }
 
 .cdUser011011-close {
