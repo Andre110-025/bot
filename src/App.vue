@@ -42,10 +42,23 @@ const togglePopup = () => {
 
 const scrollToBottom = async () => {
   await nextTick()
-  if (chatContainer.value) {
-    chatContainer.value.scrollTop = chatContainer.value.scrollHeight
-  }
+  setTimeout(() => {
+    if (chatContainer.value) {
+      chatContainer.value.scrollTop = chatContainer.value.scrollHeight
+    }
+  }, 50)
 }
+
+watch(
+  messages,
+  async () => {
+    await nextTick()
+    if (chatContainer.value) {
+      chatContainer.value.scrollTop = chatContainer.value.scrollHeight
+    }
+  },
+  { deep: true },
+)
 
 const typeMessage = (index, fullText) => {
   return new Promise((resolve) => {
