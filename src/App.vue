@@ -50,25 +50,27 @@ const togglePopup = () => {
 // }
 
 const scrollToBottom = () => {
-  // Ensure the DOM has updated after the data change
   nextTick(() => {
     const el = chatContainer.value
     if (!el) return
 
-    // 1. Scroll the container immediately
-    el.scrollTop = el.scrollHeight
+    // 1. First, find the container that holds all the messages.
+    // This is the direct child of the scrollable section.
+    const messagesContainer = el.querySelector('.cdUser011011-messages-container')
 
-    // 2. Use scrollIntoView as a reliable modern fallback,
-    //    especially for ensuring the *last* element is visible.
-    //    We delay this slightly to ensure the browser has processed the
-    //    initial scrollTop change, which can be crucial in embedded/iframe contexts.
-    setTimeout(() => {
-      const lastMsg = el.lastElementChild
-      if (lastMsg) {
-        // Use 'smooth' behavior for a nicer look, or 'auto' for instant scroll
-        lastMsg.scrollIntoView({ behavior: 'auto', block: 'end' })
-      }
-    }, 50) // A short delay (e.g., 50ms)
+    // If the Admin Chat is showing, messagesContainer might not exist, so we stop.
+    if (!messagesContainer) return
+
+    // 2. The element we want to scroll into view is the last message row
+    const lastMsg = messagesContainer.lastElementChild
+
+    if (lastMsg) {
+      // Optional: Perform scrollTop on the container first (less reliable than scrollIntoView)
+      el.scrollTop = el.scrollHeight // Using 'smooth' is better for testing/visual confirmation.
+
+      // 3. Use scrollIntoView on the *actual* last message element.
+      lastMsg.scrollIntoView({ behavior: 'smooth', block: 'end' })
+    }
   })
 }
 
