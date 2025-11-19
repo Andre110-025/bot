@@ -50,28 +50,25 @@ const togglePopup = () => {
 // }
 
 const scrollToBottom = () => {
+  // Ensure the DOM has updated after the data change
   nextTick(() => {
     const el = chatContainer.value
     if (!el) return
 
-    // Force immediate scroll
+    // 1. Scroll the container immediately
     el.scrollTop = el.scrollHeight
 
-    // Double-check after a short delay
-    requestAnimationFrame(() => {
-      el.scrollTop = el.scrollHeight
-
-      // Triple-check with setTimeout for embedded contexts
-      setTimeout(() => {
-        el.scrollTop = el.scrollHeight
-
-        // Final fallback: scroll last message into view
-        const lastMsg = el.lastElementChild
-        if (lastMsg) {
-          lastMsg.scrollIntoView({ behavior: 'smooth', block: 'end', inline: 'nearest' })
-        }
-      }, 100)
-    })
+    // 2. Use scrollIntoView as a reliable modern fallback,
+    //    especially for ensuring the *last* element is visible.
+    //    We delay this slightly to ensure the browser has processed the
+    //    initial scrollTop change, which can be crucial in embedded/iframe contexts.
+    setTimeout(() => {
+      const lastMsg = el.lastElementChild
+      if (lastMsg) {
+        // Use 'smooth' behavior for a nicer look, or 'auto' for instant scroll
+        lastMsg.scrollIntoView({ behavior: 'auto', block: 'end' })
+      }
+    }, 50) // A short delay (e.g., 50ms)
   })
 }
 
@@ -119,7 +116,7 @@ const sendMessage = async () => {
   const userText = userInput.value.trim()
   messages.value.push({ text: userText, sender: 'user' })
   userInput.value = ''
-  await scrollToBottom()
+  scrollToBottom()
   await getResponse(userText)
 }
 
@@ -128,7 +125,7 @@ const getResponse = async (inputText) => {
     // 1. Push placeholder for AI thinking
     messages.value.push({ sender: 'AI', isThinking: true })
     const aiIndex = messages.value.length - 1
-    await scrollToBottom()
+    scrollToBottom()
 
     // 2. Get reply from backend
     let reply = await getGeminiResponse(inputText)
@@ -144,7 +141,7 @@ const getResponse = async (inputText) => {
       isThinking: false,
     }
 
-    await scrollToBottom()
+    scrollToBottom()
 
     // 4. Start typing animation + wait for it to finish
     await typeMessage(aiIndex, reply)
@@ -171,7 +168,7 @@ const getResponse = async (inputText) => {
         isButton: true,
       })
 
-      await scrollToBottom()
+      scrollToBottom()
     }
   } catch (err) {
     console.error('API error:', err)
@@ -180,7 +177,7 @@ const getResponse = async (inputText) => {
       sender: 'AI',
     })
   } finally {
-    await scrollToBottom()
+    scrollToBottom()
   }
 }
 
