@@ -54,18 +54,24 @@ const scrollToBottom = () => {
     const el = chatContainer.value
     if (!el) return
 
-    // Try multiple methods – one will work
+    // Force immediate scroll
     el.scrollTop = el.scrollHeight
 
-    setTimeout(() => {
+    // Double-check after a short delay
+    requestAnimationFrame(() => {
       el.scrollTop = el.scrollHeight
 
-      // Nuclear option: scroll the last message into view
-      const lastMsg = el.lastElementChild
-      if (lastMsg) {
-        lastMsg.scrollIntoView({ behavior: 'auto', block: 'end' })
-      }
-    }, 50)
+      // Triple-check with setTimeout for embedded contexts
+      setTimeout(() => {
+        el.scrollTop = el.scrollHeight
+
+        // Final fallback: scroll last message into view
+        const lastMsg = el.lastElementChild
+        if (lastMsg) {
+          lastMsg.scrollIntoView({ behavior: 'smooth', block: 'end', inline: 'nearest' })
+        }
+      }, 100)
+    })
   })
 }
 
