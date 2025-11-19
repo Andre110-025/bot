@@ -52,24 +52,20 @@ const togglePopup = () => {
 const scrollToBottom = () => {
   nextTick(() => {
     const el = chatContainer.value
-    if (!el) return
+    if (!el) return // 1. Find the inner container that holds all the message elements.
 
-    // 1. First, find the container that holds all the messages.
-    // This is the direct child of the scrollable section.
-    const messagesContainer = el.querySelector('.cdUser011011-messages-container')
+    const messagesContainer = el.querySelector('.cdUser011011-messages-container') // If the Admin Chat is showing, messagesContainer might not exist, so we stop.
 
-    // If the Admin Chat is showing, messagesContainer might not exist, so we stop.
-    if (!messagesContainer) return
+    if (!messagesContainer) return // 2. The element we want to scroll into view is the last message row
 
-    // 2. The element we want to scroll into view is the last message row
     const lastMsg = messagesContainer.lastElementChild
 
     if (lastMsg) {
-      // Optional: Perform scrollTop on the container first (less reliable than scrollIntoView)
-      el.scrollTop = el.scrollHeight // Using 'smooth' is better for testing/visual confirmation.
-
-      // 3. Use scrollIntoView on the *actual* last message element.
+      // Use scrollIntoView on the actual last message element for best accuracy
       lastMsg.scrollIntoView({ behavior: 'smooth', block: 'end' })
+    } else {
+      // Fallback: If no message elements are found, scroll the container all the way down.
+      el.scrollTop = el.scrollHeight
     }
   })
 }
