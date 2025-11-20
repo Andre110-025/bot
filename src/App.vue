@@ -108,7 +108,6 @@ const typeMessage = (index, fullText) => {
   })
 }
 
-// user message
 const sendMessage = async () => {
   if (!userInput.value.trim()) return
   const userText = userInput.value.trim()
@@ -120,31 +119,26 @@ const sendMessage = async () => {
 
 const getResponse = async (inputText) => {
   try {
-    // 1. Push placeholder for AI thinking
     messages.value.push({ sender: 'AI', isThinking: true })
     const aiIndex = messages.value.length - 1
     scrollToBottom()
 
-    // 2. Get reply from backend
     let reply = await getGeminiResponse(inputText)
 
     if (!reply || typeof reply !== 'string') {
       reply = 'Oops! Something went wrong. Check internet connection and try again.'
     }
 
-    // 3. Replace placeholder with actual typing message
     messages.value[aiIndex] = {
       sender: 'AI',
-      text: '', // will be filled by typing animation
+      text: '',
       isThinking: false,
     }
 
     scrollToBottom()
 
-    // 4. Start typing animation + wait for it to finish
     await typeMessage(aiIndex, reply)
 
-    // 5. NOW that typing is fully done → check for keywords
     const terms = [
       'contact support for more information.',
       'contact support team',
@@ -153,6 +147,7 @@ const getResponse = async (inputText) => {
       'support team',
       'contacting support',
       'What specific information are you looking for?',
+      'please let me know',
     ]
 
     const shouldShowButton = terms.some((term) => reply.toLowerCase().includes(term.toLowerCase()))
@@ -160,7 +155,6 @@ const getResponse = async (inputText) => {
     if (shouldShowButton) {
       lastUserMessage.value = inputText
 
-      // Add the button as a SEPARATE message (no text, just a flag)
       messages.value.push({
         sender: 'AI',
         isButton: true,
@@ -212,19 +206,18 @@ onMounted(() => {
   const storedUser = localStorage.getItem('chatUser')
 
   if (storedUser) {
-    // turns that string back into an object (for reading)
     const data = JSON.parse(storedUser)
 
     if (Date.now() > data.expiresAt) {
-      console.log('Token expired — clearing data')
+      // console.log('Token expired — clearing data')
       localStorage.removeItem('chatUser')
-      showChat.value = false // no user found, show form
+      showChat.value = false
     } else {
-      console.log('Valid token — skip form')
-      showChat.value = true // skip form
+      // console.log('Valid token — skip form')
+      showChat.value = true
     }
   } else {
-    showChat.value = false // no user found, show form
+    showChat.value = false
   }
 })
 
@@ -233,7 +226,7 @@ const handleFormComplete = () => {
 }
 
 const handleAdminRedirect = () => {
-  showUserBotChat.value = false // switch to admin chat
+  showUserBotChat.value = false
 }
 
 const sendToAdmin = async () => {
@@ -249,8 +242,6 @@ const sendToAdmin = async () => {
   }
 }
 
-// onBeforeUnmount(() => clearTimeout(charTimer))
-
 onBeforeUnmount(() => {
   Object.values(charTimers).forEach((t) => clearTimeout(t))
 })
@@ -260,7 +251,6 @@ onBeforeUnmount(() => {
   <div class="cdUser011011-wrapper" v-if="showBubble">
     <div class="cdUser011011-chatbot">
       <div class="cdUser011011-inner">
-        <!-- Floating Bubble -->
         <div class="cdUser011011-bubble" @click="togglePopup">
           <svg xmlns="http://www.w3.org/2000/svg" class="cdUser011011-icon" viewBox="0 0 24 24">
             <path
@@ -272,7 +262,6 @@ onBeforeUnmount(() => {
           <span class="cdUser011011-ping-static"></span>
         </div>
 
-        <!-- Chat Popup -->
         <transition name="cdUser011011-fade">
           <div v-if="showPopup" class="cdUser011011-popup">
             <header class="cdUser011011-header">
@@ -309,7 +298,6 @@ onBeforeUnmount(() => {
 
             <SignInForm v-if="!showChat" @form-complete="handleFormComplete" />
 
-            <!-- Chat Sections -->
             <section v-else ref="chatContainer" class="cdUser011011-body">
               <div v-if="showUserBotChat" class="cdUser011011-messages-container">
                 <div
@@ -335,7 +323,6 @@ onBeforeUnmount(() => {
                       </svg>
                     </div>
 
-                    <!-- AI normal message -->
                     <div v-if="!msg.isButton" class="cdUser011011-message bot">
                       <span v-if="msg.isThinking" class="cdUser011011-typing-indicator">
                         <span class="cdUser011011-typing-dot"></span>
@@ -348,7 +335,6 @@ onBeforeUnmount(() => {
                       <span v-else>{{ msg.text }}</span>
                     </div>
 
-                    <!-- AI button message (own bubble) -->
                     <div v-else class="cdUser011011-message bot">
                       <button class="cdUser011011-fallback-btn" @click="sendToAdmin">
                         Talk to Admin
@@ -409,7 +395,6 @@ onBeforeUnmount(() => {
 </template>
 
 <style>
-/* === Core Wrapper === */
 .cdUser011011-wrapper {
   position: fixed;
   bottom: 1.5rem;
@@ -417,13 +402,11 @@ onBeforeUnmount(() => {
   z-index: 9999;
   font-family:
     -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-  /* Reset any inherited styles */
   margin: 0;
   padding: 0;
   box-sizing: border-box;
 }
 
-/* Apply box-sizing to all child elements */
 .cdUser011011-wrapper *,
 .cdUser011011-wrapper *::before,
 .cdUser011011-wrapper *::after {

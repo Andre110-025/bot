@@ -40,12 +40,12 @@ const sendMessage = async () => {
     await axios.post(`http://localhost:3000/api/user/chat`, {
       userId: props.userId,
       message: messageToSend,
-      isActive: 'yes',
+      // isActive: 'yes',
     })
     await getAllChats()
   } catch (err) {
     console.error(err)
-    newMessage.value = messageToSend // Restore message on error
+    newMessage.value = messageToSend
   } finally {
     sending.value = false
   }
@@ -227,7 +227,6 @@ watch(chatMessages, () => {
     0 2px 4px -1px rgba(0, 0, 0, 0.06);
 }
 
-/* Header */
 .cdUser011011-chat-header {
   background: #ffffff;
   border-bottom: 1px solid #e5e7eb;
