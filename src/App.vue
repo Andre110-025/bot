@@ -4,7 +4,7 @@ import axios from 'axios'
 import SignInForm from './components/SignInForm.vue'
 import AdminChatSection from './components/AdminChatSection.vue'
 import getUserId from './components/utils/userId'
-import DOMPurify from 'dompurify'
+// import DOMPurify from 'dompurify'
 // nextTick: waits for the DOM to update after a reactive change.
 const showPopup = ref(false)
 const userInput = ref('')
@@ -39,10 +39,6 @@ if (!userId) {
 
 const togglePopup = () => {
   showPopup.value = !showPopup.value
-}
-
-const sanitized = (html) => {
-  return DOMPurify.sanitize(html)
 }
 
 // const scrollToBottom = async () => {
@@ -374,10 +370,9 @@ onBeforeUnmount(() => {
                         <span class="cdUser011011-typing-dot"></span>
                         <span class="cdUser011011-typing-dot"></span>
                       </span>
-                      <span
-                        v-else-if="typingMessageIndex === index"
-                        v-html="sanitized(displayedTexts[index] || '')"
-                      ></span>
+                      <span v-else-if="typingMessageIndex === index">
+                        {{ displayedTexts[index] || '' }}
+                      </span>
                       <span v-else>{{ msg.text }}</span>
                     </div>
 
