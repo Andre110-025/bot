@@ -382,7 +382,12 @@ onBeforeUnmount(() => {
                         v-html="formatMessage(displayedTexts[index] || '')"
                       >
                       </span>
-                      <span v-else>{{ msg.text }}</span>
+                      <span
+                        v-else
+                        class="cdUser011011-chat-message"
+                        v-html="formatMessage(msg.text)"
+                      >
+                      </span>
                     </div>
 
                     <div v-else class="cdUser011011-message bot">
@@ -1101,7 +1106,7 @@ onBeforeUnmount(() => {
 .cdUser011011-chat-message {
   line-height: 1.6;
   font-size: 15px;
-  color: #333;
+  color: #fff;
 }
 .cdUser011011-chat-message h1,
 h2,
