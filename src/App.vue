@@ -89,7 +89,11 @@ watch(displayedTexts, scrollToBottom, { deep: true })
 // saves all messages to local storage to create an history
 const saveMessages = () => {
   if (!userId) return
-  localStorage.setItem(`messages_${userId}`, JSON.stringify(messages.value))
+  const payload = {
+    timestamp: Date.now(),
+    messages: messages.value,
+  }
+  localStorage.setItem(`messages_${userId}`, JSON.stringify(payload))
 }
 
 // const saveMessages = () => {
@@ -276,11 +280,11 @@ const sendToAdmin = async () => {
 
 onMounted(() => {
   const stored = localStorage.getItem(`messages_${userId}`)
+  const oneDay = 1 * 24 * 60 * 60 * 1000
+
   if (stored) {
     const data = JSON.parse(stored)
-    const oneDay = 1 * 24 * 60 * 60 * 1000
-    if (Date.now() - data.timestamp > oneDay) {
-      // Clear old messages
+    if (!data.timestamp || Date.now() - data.timestamp > oneDay) {
       localStorage.removeItem(`messages_${userId}`)
       messages.value = [{ text: 'Hey there, I’m NexDre. How can I help you today?', sender: 'AI' }]
     } else {
