@@ -83,6 +83,17 @@ const scrollToBottom = () => {
 
 watch(messages, scrollToBottom, { deep: true })
 watch(displayedTexts, scrollToBottom, { deep: true })
+// Run scrollToBottom whenever messages or anything inside it changes, not just when the array itself is reassigned.
+
+const saveMessages = () => {
+  if (!userId) return
+  localStorage.setItem(`messages_${userId}`, JSON.stringify(messages.value))
+}
+
+const addMessage = (msg) => {
+  messages.value.push(msg)
+  saveMessages()
+}
 
 const typeMessage = (index, fullText) => {
   return new Promise((resolve) => {
@@ -102,6 +113,7 @@ const typeMessage = (index, fullText) => {
         clearTimeout(charTimers[index])
         delete charTimers[index]
         resolve() // <-- typing finished
+        saveMessages()
       }
     }
     step()
@@ -111,7 +123,8 @@ const typeMessage = (index, fullText) => {
 const sendMessage = async () => {
   if (!userInput.value.trim()) return
   const userText = userInput.value.trim()
-  messages.value.push({ text: userText, sender: 'user' })
+
+  addMessage({ text: userText, sender: 'user', createdAt: Date.now() })
   userInput.value = ''
   scrollToBottom()
   await getResponse(userText)
@@ -155,7 +168,7 @@ const getResponse = async (inputText) => {
     if (shouldShowButton) {
       lastUserMessage.value = inputText
 
-      messages.value.push({
+      addMessage({
         sender: 'AI',
         isButton: true,
       })
@@ -164,7 +177,7 @@ const getResponse = async (inputText) => {
     }
   } catch (err) {
     console.error('API error:', err)
-    messages.value.push({
+    addMessage({
       text: 'Oops, something went wrong.',
       sender: 'AI',
     })
@@ -241,6 +254,12 @@ const sendToAdmin = async () => {
     console.error(err)
   }
 }
+
+onMounted(() => {
+  // restore messages
+  const storedMessages = localStorage.getItem(`messages_${userId}`)
+  if (storedMessages) messages.value = JSON.parse(storedMessages)
+})
 
 onBeforeUnmount(() => {
   Object.values(charTimers).forEach((t) => clearTimeout(t))

@@ -5,27 +5,29 @@ import getUserId from './components/utils/userId'
 import SignInForm from './components/SignInForm.vue'
 import AdminChatSection from './components/AdminChatSection.vue'
 
+// ---- State ----
 const showPopup = ref(false)
 const userInput = ref('')
 const messages = ref([{ text: 'Hey there, I’m NexDre. How can I help you today?', sender: 'AI' }])
 const typingMessageIndex = ref(-1)
 const displayedTexts = ref({})
 const chatContainer = ref(null)
-const charTimers = {} // now per-message timer
+const charTimers = {} // per-message typing timers
 const lastUserMessage = ref('')
 const showUserBotChat = ref(true)
-const adminMessages = ref([])
-let userId = localStorage.getItem('userId')
 
+let userId = localStorage.getItem('userId')
 if (!userId) {
   userId = getUserId()
   localStorage.setItem('userId', userId)
 }
 
+// ---- Helpers ----
 const togglePopup = () => {
   showPopup.value = !showPopup.value
 }
 
+// scroll to bottom safely
 const scrollToBottom = async () => {
   await nextTick()
   if (chatContainer.value) {
@@ -33,7 +35,19 @@ const scrollToBottom = async () => {
   }
 }
 
-// safe typing animation
+// save messages to localStorage
+const saveMessages = () => {
+  if (!userId) return
+  localStorage.setItem(`messages_${userId}`, JSON.stringify(messages.value))
+}
+
+// central addMessage function
+const addMessage = (msg) => {
+  messages.value.push(msg)
+  saveMessages()
+}
+
+// typing animation for AI messages
 const typeMessage = (index, fullText) => {
   let i = 0
   displayedTexts.value[index] = ''
@@ -47,39 +61,41 @@ const typeMessage = (index, fullText) => {
       charTimers[index] = setTimeout(step, msPerChar)
     } else {
       typingMessageIndex.value = -1
+      messages.value[index].text = fullText
       clearTimeout(charTimers[index])
       delete charTimers[index]
+      saveMessages() // save final typed AI message
     }
   }
   step()
 }
 
-// send user message
+// ---- Chat Flow ----
 const sendMessage = async () => {
   if (!userInput.value.trim()) return
   const userText = userInput.value.trim()
-  messages.value.push({ text: userText, sender: 'user' })
+
+  addMessage({ text: userText, sender: 'user', createdAt: Date.now() })
+  lastUserMessage.value = userText
   userInput.value = ''
   await scrollToBottom()
+
   await getResponse(userText)
 }
 
-// AI response
 const getResponse = async (inputText) => {
   try {
-    // push placeholder for AI message
-    messages.value.push({ sender: 'AI', isThinking: true })
-    const aiIndex = messages.value.length - 1 // FIXED index
+    addMessage({ sender: 'AI', isThinking: true }) // placeholder
+    const aiIndex = messages.value.length - 1
     await scrollToBottom()
 
     let reply = await getGeminiResponse(inputText)
 
-    // fallback if backend shape is weird
     if (!reply || typeof reply !== 'string') {
       reply = 'Oops! Something went wrong. Check internet connection and try again.'
     }
 
-    // update AI message
+    // set AI message
     messages.value[aiIndex].isThinking = false
     messages.value[aiIndex].text = reply
     await scrollToBottom()
@@ -87,26 +103,22 @@ const getResponse = async (inputText) => {
     // typing animation
     typeMessage(aiIndex, reply)
 
-    // admin fallback button if unsure
+    // fallback button (example)
     if (reply === 'I’m not sure, the admin will get back to you.') {
-      lastUserMessage.value = inputText
       setTimeout(() => {
-        messages.value.push({
-          sender: 'AI',
-          isButton: true,
-        })
+        addMessage({ sender: 'AI', isButton: true })
         scrollToBottom()
       }, 1200)
     }
   } catch (err) {
     console.error('API error:', err)
-    messages.value.push({ text: 'Oops, something went wrong.', sender: 'AI' })
+    addMessage({ text: 'Oops, something went wrong.', sender: 'AI' })
   } finally {
     await scrollToBottom()
   }
 }
 
-// backend call
+// ---- API Call ----
 async function getGeminiResponse(userText) {
   try {
     const response = await axios.post(
@@ -125,12 +137,12 @@ async function getGeminiResponse(userText) {
   }
 }
 
-// admin redirect
+// ---- Admin redirect ----
 const sendToAdmin = async () => {
   showUserBotChat.value = false
   try {
     await axios.post('http://localhost:3000/api/admin/repost', {
-      userId: userId,
+      userId,
       userText: lastUserMessage.value,
       timestamp: new Date().toISOString(),
     })
@@ -139,7 +151,14 @@ const sendToAdmin = async () => {
   }
 }
 
-// cleanup timers on unmount
+// ---- Mount ----
+onMounted(() => {
+  // restore messages
+  const storedMessages = localStorage.getItem(`messages_${userId}`)
+  if (storedMessages) messages.value = JSON.parse(storedMessages)
+})
+
+// ---- Cleanup ----
 onBeforeUnmount(() => {
   Object.values(charTimers).forEach((t) => clearTimeout(t))
 })
