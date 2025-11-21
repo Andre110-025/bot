@@ -210,7 +210,7 @@ async function getGeminiResponse(userText) {
         api: props.api,
       },
     )
-    console.log(response)
+    // console.log(response)
     return response.data.data.response
   } catch (err) {
     console.error('Error calling Gemini API:', err)
@@ -378,6 +378,7 @@ onBeforeUnmount(() => {
                       </span>
                       <span
                         v-else-if="typingMessageIndex === index"
+                        class="cdUser011011-chat-message"
                         v-html="formatMessage(displayedTexts[index] || '')"
                       >
                       </span>
@@ -1094,5 +1095,65 @@ onBeforeUnmount(() => {
   .cdUser011011-popup {
     height: 500px;
   }
+}
+
+/* chat formatter from AI response */
+.cdUser011011-chat-message {
+  line-height: 1.6;
+  font-size: 15px;
+  color: #333;
+}
+.cdUser011011-chat-message h1,
+h2,
+h3 {
+  margin: 12px 0 6px;
+  line-height: 1.3;
+}
+.cdUser011011-chat-message h1 {
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.cdUser011011-chat-message h2 {
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.cdUser011011-chat-message h3 {
+  font-size: 16px;
+  font-weight: 600;
+}
+.cdUser011011-chat-message p {
+  margin: 8px 0;
+}
+
+.cdUser011011-chat-message strong,
+.cdUser011011-chat-message b {
+  font-weight: 600;
+}
+
+.cdUser011011-chat-message em,
+.cdUser011011-chat-message i {
+  font-style: italic;
+}
+
+.cdUser011011-chat-message ul,
+.cdUser011011-chat-message ol {
+  padding-left: 20px;
+  margin: 8px 0;
+}
+
+.cdUser011011-chat-message li {
+  margin: 4px 0;
+}
+
+.cdUser011011-chat-message a {
+  color: #2563eb;
+  text-decoration: underline;
+  font-weight: 500;
+}
+
+.cdUser011011-chat-message a:hover {
+  text-decoration: none;
 }
 </style>

@@ -28,7 +28,7 @@ const handleForm = () => {
 
   setTimeout(() => {
     const token = Math.random().toString(36).substring(2) + Date.now().toString(36)
-    console.log('Generated token:', token)
+    // console.log('Generated token:', token)
 
     const expiresAt = Date.now() + 7 * 24 * 60 * 60 * 1000
 
