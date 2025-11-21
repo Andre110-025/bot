@@ -4,20 +4,21 @@ import axios from 'axios'
 import SignInForm from './components/SignInForm.vue'
 import AdminChatSection from './components/AdminChatSection.vue'
 import getUserId from './components/utils/userId'
-
+import DOMPurify from 'dompurify'
+// nextTick: waits for the DOM to update after a reactive change.
 const showPopup = ref(false)
 const userInput = ref('')
 const messages = ref([{ text: 'Hey there, I’m NexDre. How can I help you today?', sender: 'AI' }])
 const typingMessageIndex = ref(-1)
-const displayedTexts = ref({})
+const displayedTexts = ref({}) // this is the Text being typed per message, for animation
 const chatContainer = ref(null)
 // let charTimer = null
-const charTimers = {}
+const charTimers = {} // timing for all typing animation
 const lastUserMessage = ref('')
 const showUserBotChat = ref(true)
 const adminMessages = ref([])
 let userId = localStorage.getItem('userId')
-
+// watch: reacts to reactive variable changes.
 const props = defineProps({
   website: {
     type: String,
@@ -52,19 +53,13 @@ const togglePopup = () => {
 const scrollToBottom = () => {
   nextTick(() => {
     const el = chatContainer.value
-    if (!el) return // 1. Find the inner container that holds all the message elements.
-
-    const messagesContainer = el.querySelector('.cdUser011011-messages-container') // If the Admin Chat is showing, messagesContainer might not exist, so we stop.
-
-    if (!messagesContainer) return // 2. The element we want to scroll into view is the last message row
-
+    if (!el) return
+    const messagesContainer = el.querySelector('.cdUser011011-messages-container')
+    if (!messagesContainer) return
     const lastMsg = messagesContainer.lastElementChild
-
     if (lastMsg) {
-      // Use scrollIntoView on the actual last message element for best accuracy
       lastMsg.scrollIntoView({ behavior: 'smooth', block: 'end' })
     } else {
-      // Fallback: If no message elements are found, scroll the container all the way down.
       el.scrollTop = el.scrollHeight
     }
   })
@@ -85,16 +80,28 @@ watch(messages, scrollToBottom, { deep: true })
 watch(displayedTexts, scrollToBottom, { deep: true })
 // Run scrollToBottom whenever messages or anything inside it changes, not just when the array itself is reassigned.
 
+// saves all messages to local storage to create an history
 const saveMessages = () => {
   if (!userId) return
   localStorage.setItem(`messages_${userId}`, JSON.stringify(messages.value))
 }
 
+// const saveMessages = () => {
+//   if (!userId) return
+//   const payload = {
+//     timestamp: Date.now(),
+//     messages: messages.value
+//   }
+//   localStorage.setItem(`messages_${userId}`, JSON.stringify(payload))
+// }
+
 const addMessage = (msg) => {
   messages.value.push(msg)
   saveMessages()
 }
+// so this function now pushes the message
 
+// typing animation one character at a time
 const typeMessage = (index, fullText) => {
   return new Promise((resolve) => {
     let i = 0
@@ -234,6 +241,21 @@ onMounted(() => {
   }
 })
 
+// onMounted(() => {
+//   const stored = localStorage.getItem(`messages_${userId}`)
+//   if (stored) {
+//     const data = JSON.parse(stored)
+//     const twoHours = 2 * 60 * 60 * 1000
+//     if (Date.now() - data.timestamp > twoHours) {
+//       // Clear old messages
+//       localStorage.removeItem(`messages_${userId}`)
+//       messages.value = [{ text: 'Hey there, I’m NexDre. How can I help you today?', sender: 'AI' }]
+//     } else {
+//       messages.value = data.messages
+//     }
+//   }
+// })
+
 const handleFormComplete = () => {
   showChat.value = true
 }
@@ -348,8 +370,10 @@ onBeforeUnmount(() => {
                         <span class="cdUser011011-typing-dot"></span>
                         <span class="cdUser011011-typing-dot"></span>
                       </span>
-                      <span v-else-if="typingMessageIndex === index">
-                        {{ displayedTexts[index] || '' }}
+                      <span
+                        v-else-if="typingMessageIndex === index"
+                        v-html="sanitized(displayedTexts[index] || '')"
+                      >
                       </span>
                       <span v-else>{{ msg.text }}</span>
                     </div>
