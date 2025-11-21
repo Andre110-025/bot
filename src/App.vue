@@ -247,21 +247,6 @@ onMounted(() => {
   }
 })
 
-// onMounted(() => {
-//   const stored = localStorage.getItem(`messages_${userId}`)
-//   if (stored) {
-//     const data = JSON.parse(stored)
-//     const twoHours = 2 * 60 * 60 * 1000
-//     if (Date.now() - data.timestamp > twoHours) {
-//       // Clear old messages
-//       localStorage.removeItem(`messages_${userId}`)
-//       messages.value = [{ text: 'Hey there, I’m NexDre. How can I help you today?', sender: 'AI' }]
-//     } else {
-//       messages.value = data.messages
-//     }
-//   }
-// })
-
 const handleFormComplete = () => {
   showChat.value = true
 }
@@ -283,10 +268,25 @@ const sendToAdmin = async () => {
   }
 }
 
+// onMounted(() => {
+//   // restore messages
+//   const storedMessages = localStorage.getItem(`messages_${userId}`)
+//   if (storedMessages) messages.value = JSON.parse(storedMessages)
+// })
+
 onMounted(() => {
-  // restore messages
-  const storedMessages = localStorage.getItem(`messages_${userId}`)
-  if (storedMessages) messages.value = JSON.parse(storedMessages)
+  const stored = localStorage.getItem(`messages_${userId}`)
+  if (stored) {
+    const data = JSON.parse(stored)
+    const oneDay = 1 * 24 * 60 * 60 * 1000
+    if (Date.now() - data.timestamp > oneDay) {
+      // Clear old messages
+      localStorage.removeItem(`messages_${userId}`)
+      messages.value = [{ text: 'Hey there, I’m NexDre. How can I help you today?', sender: 'AI' }]
+    } else {
+      messages.value = data.messages
+    }
+  }
 })
 
 onBeforeUnmount(() => {
