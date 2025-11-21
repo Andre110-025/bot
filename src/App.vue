@@ -41,6 +41,10 @@ const togglePopup = () => {
   showPopup.value = !showPopup.value
 }
 
+const sanitized = (html) => {
+  return DOMPurify.sanitize(html)
+}
+
 // const scrollToBottom = async () => {
 //   await nextTick()
 //   setTimeout(() => {
@@ -373,8 +377,7 @@ onBeforeUnmount(() => {
                       <span
                         v-else-if="typingMessageIndex === index"
                         v-html="sanitized(displayedTexts[index] || '')"
-                      >
-                      </span>
+                      ></span>
                       <span v-else>{{ msg.text }}</span>
                     </div>
 
