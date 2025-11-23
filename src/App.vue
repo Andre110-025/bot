@@ -475,7 +475,7 @@ onBeforeUnmount(() => {
 .cdUser011011-wrapper *::after {
   box-sizing: border-box;
   margin: 0;
-  padding: 0;
+  /* padding: 0; */
 }
 
 /* === Floating Bubble === */
