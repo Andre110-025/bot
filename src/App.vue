@@ -396,7 +396,7 @@ onBeforeUnmount(() => {
 
                     <div v-else class="cdUser011011-message bot">
                       <button class="cdUser011011-fallback-btn" @click="sendToAdmin">
-                        Talk to Admin
+                        Chat with a representative
                       </button>
                     </div>
                   </template>
@@ -433,7 +433,11 @@ onBeforeUnmount(() => {
                     placeholder="Type your message..."
                     class="cdUser011011-footer-input"
                   />
-                  <button class="cdUser011011-footer-send" @click="sendMessage">
+                  <button
+                    class="cdUser011011-footer-send"
+                    @click="sendMessage"
+                    :disabled="!userInput.trim()"
+                  >
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
                       width="18"
@@ -956,6 +960,14 @@ onBeforeUnmount(() => {
 .cdUser011011-footer-send:hover {
   transform: translateY(-50%) scale(1.05);
   box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+}
+
+.cdUser011011-footer-send:disabled {
+  background: #e2e8f0;
+  color: #a0aec0;
+  cursor: not-allowed;
+  box-shadow: none;
+  opacity: 0.6;
 }
 
 .cdUser011011-footer-send:active {

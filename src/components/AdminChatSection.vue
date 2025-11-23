@@ -217,6 +217,7 @@ watch(chatMessages, () => {
   display: flex;
   flex-direction: column;
   height: 100%;
+  max-height: 100vh;
   background: #f8f9fa;
   font-family:
     -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', sans-serif;
@@ -230,14 +231,16 @@ watch(chatMessages, () => {
 .cdUser011011-chat-header {
   background: #ffffff;
   border-bottom: 1px solid #e5e7eb;
-  padding: 2px 10px;
+  padding: 16px 20px;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  flex-shrink: 0;
 }
 
 .cdUser011011-header-content {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  margin: 0;
 }
 
 .cdUser011011-status-indicator {
@@ -247,6 +250,7 @@ watch(chatMessages, () => {
   font-weight: 600;
   font-size: 15px;
   color: #111827;
+  margin: 0;
 }
 
 .cdUser011011-status-dot {
@@ -271,6 +275,7 @@ watch(chatMessages, () => {
   background: transparent;
   border: none;
   padding: 8px;
+  margin: 0;
   cursor: pointer;
   color: #6b7280;
   border-radius: 6px;
@@ -311,6 +316,7 @@ watch(chatMessages, () => {
   align-items: center;
   height: 100%;
   gap: 12px;
+  padding: 20px;
 }
 
 .cdUser011011-loader {
@@ -333,6 +339,7 @@ watch(chatMessages, () => {
   flex: 1;
   overflow: hidden;
   background: #f8f9fa;
+  min-height: 0;
 }
 
 .cdUser011011-messages-container {
@@ -371,6 +378,7 @@ watch(chatMessages, () => {
   height: 100%;
   color: #9ca3af;
   gap: 8px;
+  padding: 20px;
 }
 
 .cdUser011011-empty-state svg {
@@ -388,11 +396,13 @@ watch(chatMessages, () => {
 .cdUser011011-empty-state span {
   font-size: 14px;
   color: #9ca3af;
+  margin: 0;
 }
 
 /* Message Row */
 .cdUser011011-message-row {
   display: flex;
+  margin: 0;
   animation: cdUser011011-slideIn 0.3s ease-out;
 }
 
@@ -410,6 +420,7 @@ watch(chatMessages, () => {
 .cdUser011011-message-row.admin {
   justify-content: flex-start;
 }
+
 .cdUser011011-message-row.user {
   justify-content: flex-end;
 }
@@ -419,6 +430,7 @@ watch(chatMessages, () => {
   gap: 10px;
   max-width: 75%;
   align-items: flex-end;
+  margin: 0;
 }
 
 .cdUser011011-message-row.user .cdUser011011-message-content {
@@ -435,6 +447,7 @@ watch(chatMessages, () => {
   justify-content: center;
   flex-shrink: 0;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  margin: 0;
 }
 
 .cdUser011011-avatar-admin {
@@ -452,6 +465,7 @@ watch(chatMessages, () => {
   display: flex;
   flex-direction: column;
   gap: 4px;
+  margin: 0;
 }
 
 .cdUser011011-message-row.user .cdUser011011-bubble-wrapper {
@@ -467,6 +481,7 @@ watch(chatMessages, () => {
   word-wrap: break-word;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
   position: relative;
+  margin: 0;
 }
 
 .cdUser011011-bubble-admin {
@@ -490,6 +505,7 @@ watch(chatMessages, () => {
   font-size: 11px;
   color: #9ca3af;
   padding: 0 4px;
+  margin: 0;
 }
 
 /* Input Area */
@@ -498,12 +514,14 @@ watch(chatMessages, () => {
   border-top: 1px solid #e5e7eb;
   padding: 16px 20px;
   box-shadow: 0 -1px 2px rgba(0, 0, 0, 0.05);
+  flex-shrink: 0;
 }
 
 .cdUser011011-input-container {
   display: flex;
   gap: 12px;
   align-items: center;
+  margin: 0;
 }
 
 .cdUser011011-message-input {
@@ -515,6 +533,7 @@ watch(chatMessages, () => {
   outline: none;
   transition: all 0.2s;
   background: #f9fafb;
+  margin: 0;
 }
 
 .cdUser011011-message-input:focus {
@@ -542,6 +561,8 @@ watch(chatMessages, () => {
   transition: all 0.2s;
   box-shadow: 0 2px 4px rgba(0, 153, 112, 0.3);
   flex-shrink: 0;
+  margin: 0;
+  padding: 0;
 }
 
 .cdUser011011-send-btn:hover:not(:disabled) {
