@@ -209,8 +209,8 @@ async function getGeminiResponse(userText) {
       'https://assitance.storehive.com.ng/public/api/chat/message',
       {
         message: userText,
-        conversation_id: userId,
-        website: props.website + ' ' + userId,
+        website: props.website,
+        conversation_id: userId + props.website,
         api: props.api,
       },
     )
