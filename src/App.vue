@@ -217,9 +217,12 @@ async function getGeminiResponse(userText) {
         website: props.website,
         conversation_id: userId + cleanWebsite,
         api: props.api,
+        user_email: null,
+        start_admin_chat: false,
       },
     )
     // console.log(response)
+    localStorage.setItem('chat_user_id', conversation_id)
     return response.data.data.response
   } catch (err) {
     console.error('Error calling Gemini API:', err)
@@ -264,17 +267,8 @@ const handleAdminRedirect = () => {
   showUserBotChat.value = false
 }
 
-const sendToAdmin = async () => {
+const sendToAdmin = () => {
   showUserBotChat.value = false
-  try {
-    await axios.post('http://localhost:3000/api/admin/repost', {
-      userId: userId,
-      userText: lastUserMessage.value,
-      timestamp: new Date().toISOString(),
-    })
-  } catch (err) {
-    console.error(err)
-  }
 }
 
 // onMounted(() => {
@@ -425,7 +419,7 @@ onBeforeUnmount(() => {
                 </div>
               </div>
 
-              <AdminChatSection v-else :userId="userId" />
+              <AdminChatSection v-else :userId="userId" :api="props.api" :website="props.website" />
             </section>
 
             <footer class="cdUser011011-footer">

@@ -136,14 +136,14 @@ const formatTime = (timestamp) => {
       </div>
     </div>
 
-    <!-- <div v-if="loading && chatMessages.length === 0" class="cdUser011011-loading-wrapper">
+    <div v-if="loading && chatMessages.length === 0" class="cdUser011011-loading-wrapper">
       <div class="cdUser011011-loader"></div>
       <p class="cdUser011011-loading-text">Loading messages...</p>
-    </div> -->
+    </div>
 
-    <div class="cdUser011011-messages-wrapper">
+    <div v-else class="cdUser011011-messages-wrapper">
       <div ref="chatContainerRef" class="cdUser011011-messages-container">
-        <!-- <div v-if="chatMessages.length === 0" class="cdUser011011-empty-state">
+        <div v-if="chatMessages.length === 0" class="cdUser011011-empty-state">
           <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24">
             <path
               fill="currentColor"
@@ -152,16 +152,16 @@ const formatTime = (timestamp) => {
           </svg>
           <p>No messages yet</p>
           <span>Start a conversation below</span>
-        </div> -->
+        </div>
 
-        <!-- <div
+        <div
           v-for="(msg, i) in chatMessages"
           :key="i"
           class="cdUser011011-message-row"
           :class="msg.sender"
-        > -->
-        <div class="cdUser011011-message-content">
-          <!-- <div class="cdUser011011-avatar" :class="`cdUser011011-avatar-${msg.sender}`">
+        >
+          <div class="cdUser011011-message-content">
+            <div class="cdUser011011-avatar" :class="`cdUser011011-avatar-${msg.sender}`">
               <svg
                 v-if="msg.sender === 'admin'"
                 xmlns="http://www.w3.org/2000/svg"
@@ -187,17 +187,17 @@ const formatTime = (timestamp) => {
                   d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10s10-4.48 10-10S17.52 2 12 2m0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3s-3-1.34-3-3s1.34-3 3-3m0 14.2a7.2 7.2 0 0 1-6-3.22c.03-1.99 4-3.08 6-3.08c1.99 0 5.97 1.09 6 3.08a7.2 7.2 0 0 1-6 3.22"
                 />
               </svg>
-            </div> -->
-
-          <div class="cdUser011011-bubble-wrapper">
-            <div class="cdUser011011-message-bubble" :class="`cdUser011011-bubble-${msg.sender}`">
-              <p class="cdUser011011-message-text">{{ msg.text }}</p>
             </div>
-            <span class="cdUser011011-message-time">{{ formatTime(msg.timestamp) }}</span>
+
+            <div class="cdUser011011-bubble-wrapper">
+              <div class="cdUser011011-message-bubble" :class="`cdUser011011-bubble-${msg.sender}`">
+                <p class="cdUser011011-message-text">{{ msg.text }}</p>
+              </div>
+              <span class="cdUser011011-message-time">{{ formatTime(msg.timestamp) }}</span>
+            </div>
           </div>
         </div>
       </div>
-      <!-- </div> -->
     </div>
 
     <div class="cdUser011011-input-wrapper">
