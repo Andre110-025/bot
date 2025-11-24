@@ -203,6 +203,11 @@ const getResponse = async (inputText) => {
   }
 }
 
+const cleanWebsite = props.website
+  .replace(/^https?:\/\//, '')
+  .replace(/^www\./, '')
+  .split('/')[0]
+
 async function getGeminiResponse(userText) {
   try {
     const response = await axios.post(
@@ -210,7 +215,7 @@ async function getGeminiResponse(userText) {
       {
         message: userText,
         website: props.website,
-        conversation_id: userId + props.website,
+        conversation_id: userId + cleanWebsite,
         api: props.api,
       },
     )
