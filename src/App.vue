@@ -217,7 +217,7 @@ async function getGeminiResponse(userText) {
         website: props.website,
         conversation_id: userId + cleanWebsite,
         api: props.api,
-        user_email: null,
+        // user_email: null,
         start_admin_chat: false,
       },
     )

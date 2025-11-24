@@ -182,3 +182,78 @@ onMounted(() => {
   }
 })
 </script>
+
+<script setup>
+import { ref, nextTick } from 'vue'
+import axios from 'axios'
+
+const props = defineProps({
+  userId: { type: String, required: true },
+  api: { type: String, required: true },
+  website: { type: String, required: true },
+})
+
+const sending = ref(false)
+const chatMessages = ref([])
+const newMessage = ref('')
+
+const stored = localStorage.getItem('chatUser')
+const userEmail = stored ? JSON.parse(stored).email : ''
+
+// Clean website (remove https://, www., and trailing paths)
+const cleanWebsite = props.website
+  .replace(/^https?:\/\//, '')
+  .replace(/^www\./, '')
+  .split('/')[0]
+
+// Scroll to bottom helper
+const chatContainerRef = ref(null)
+const scrollToBottom = () => {
+  if (chatContainerRef.value) {
+    chatContainerRef.value.scrollTo({
+      top: chatContainerRef.value.scrollHeight,
+      behavior: 'smooth',
+    })
+  }
+}
+
+// Send message function
+const sendMessage = async () => {
+  const messageToSend = newMessage.value.trim()
+  if (!messageToSend || sending.value) return
+
+  // Clear input
+  newMessage.value = ''
+
+  // Show message instantly in UI
+  chatMessages.value.push({
+    sender: 'admin',
+    text: messageToSend,
+    timestamp: Date.now(),
+  })
+  nextTick(() => scrollToBottom())
+
+  try {
+    sending.value = true
+    await axios.post('https://assitance.storehive.com.ng/public/api/chat/message', {
+      conversation_id: props.userId + cleanWebsite,
+      message: messageToSend,
+      website: cleanWebsite,
+      api: props.api,
+      user_email: userEmail,
+      start_admin_chat: true,
+    })
+  } catch (err) {
+    console.error('Failed to send message:', err)
+    // Optionally mark the message as failed
+  } finally {
+    sending.value = false
+  }
+}
+
+// Format timestamp for display
+const formatTime = (timestamp) => {
+  const date = new Date(timestamp)
+  return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+}
+</script>
