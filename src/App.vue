@@ -203,6 +203,12 @@ const getResponse = async (inputText) => {
   }
 }
 
+const stored = localStorage.getItem('chatUser')
+const data = stored ? JSON.parse(stored) : null
+const userEmail = data.email
+
+console.log(userEmail)
+
 const cleanWebsite = props.website
   .replace(/^https?:\/\//, '')
   .replace(/^www\./, '')
@@ -217,8 +223,8 @@ async function getGeminiResponse(userText) {
         website: props.website,
         conversation_id: userId + cleanWebsite,
         api: props.api,
-        // user_email: null,
         start_admin_chat: false,
+        user_email: userEmail,
       },
     )
     // console.log(response)
