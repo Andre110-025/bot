@@ -210,7 +210,7 @@ async function getGeminiResponse(userText) {
       {
         message: userText,
         conversation_id: userId,
-        website: props.website,
+        website: props.website + ' ' + userId,
         api: props.api,
       },
     )

@@ -162,4 +162,23 @@ onMounted(() => {
 onBeforeUnmount(() => {
   Object.values(charTimers).forEach((t) => clearTimeout(t))
 })
+
+import { ref, onMounted } from 'vue'
+
+const showChat = ref(false)
+
+onMounted(() => {
+  const saved = JSON.parse(localStorage.getItem('chatUser'))
+
+  if (!saved) return
+
+  if (Date.now() > saved.expiresAt) {
+    // expired
+    localStorage.removeItem('chatUser')
+    showChat.value = false
+  } else {
+    // still valid
+    showChat.value = true
+  }
+})
 </script>
