@@ -224,7 +224,7 @@ async function getGeminiResponse(userText) {
         conversation_id: userId + cleanWebsite,
         api: props.api,
         start_admin_chat: false,
-        user_email: null,
+        // user_email: null,
       },
     )
     // console.log(response)
