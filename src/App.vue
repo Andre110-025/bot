@@ -228,7 +228,7 @@ async function getGeminiResponse(userText) {
       },
     )
     // console.log(response)
-    localStorage.setItem('chat_user_id', conversation_id)
+    localStorage.setItem('chat_user_id', userId + cleanWebsite)
     return response.data.data.response
   } catch (err) {
     console.error('Error calling Gemini API:', err)
