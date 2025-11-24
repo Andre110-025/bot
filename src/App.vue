@@ -214,7 +214,7 @@ async function getGeminiResponse(userText) {
         api: props.api,
       },
     )
-    // console.log(response)
+    console.log(response)
     return response.data.data.response
   } catch (err) {
     console.error('Error calling Gemini API:', err)
