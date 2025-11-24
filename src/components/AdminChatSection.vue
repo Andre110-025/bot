@@ -1,45 +1,20 @@
 <script setup>
-import { ref, onMounted, nextTick, watch } from 'vue'
+import { ref, nextTick } from 'vue'
 import axios from 'axios'
 
 const props = defineProps({
-  userId: {
-    type: String,
-    required: true,
-  },
-  api: {
-    type: String,
-    required: true,
-  },
-  website: {
-    type: String,
-    required: true,
-  },
+  userId: { type: String, required: true },
+  api: { type: String, required: true },
+  website: { type: String, required: true },
 })
 
-const loading = ref(false)
 const sending = ref(false)
 const chatMessages = ref([])
 const newMessage = ref('')
 
-// const getAllChats = async () => {
-//   try {
-//     loading.value = true
-//     await new Promise((resolve) => setTimeout(resolve, 2000))
-//     const res = await axios.get(`http://localhost:3000/api/user/chat/${props.userId}`)
-//     chatMessages.value = res.data
-//     await nextTick()
-//     scrollToBottom()
-//   } catch (err) {
-//     console.error('Failed to fetch messages:', err)
-//   } finally {
-//     loading.value = false
-//   }
-// }
-
 const stored = localStorage.getItem('chatUser')
 const data = stored ? JSON.parse(stored) : null
-const userEmail = data.email
+const userEmail = data?.email || 'guest@example.com'
 
 const cleanWebsite = props.website
   .replace(/^https?:\/\//, '')
@@ -52,24 +27,33 @@ const sendMessage = async () => {
   const messageToSend = newMessage.value.trim()
   newMessage.value = ''
 
+  // Add message locally for instant feedback
+  chatMessages.value.push({
+    sender: 'user',
+    text: messageToSend,
+    timestamp: Date.now(),
+  })
+  await nextTick()
+  scrollToBottom()
+
   try {
     sending.value = true
-    const response = await axios.post(
-      'https://assitance.storehive.com.ng/public/api/chat/message',
-      {
-        conversation_id: props.userId + cleanWebsite,
-        message: messageToSend,
-        website: props.website,
-        api: props.api,
-        user_email: userEmail,
-        start_admin_chat: true,
-      },
-    )
-    console.log(response)
-    // await getAllChats()
+    await axios.post('https://assitance.storehive.com.ng/public/api/chat/message', {
+      conversation_id: props.userId + cleanWebsite,
+      message: messageToSend,
+      website: props.website,
+      api: props.api,
+      user_email: userEmail,
+      start_admin_chat: true,
+    })
   } catch (err) {
     console.error(err)
-    newMessage.value = messageToSend
+    // On error, show message again
+    chatMessages.value.push({
+      sender: 'user',
+      text: messageToSend,
+      timestamp: Date.now(),
+    })
   } finally {
     sending.value = false
   }
@@ -85,13 +69,10 @@ const scrollToBottom = () => {
   }
 }
 
-// Format time helper
 const formatTime = (timestamp) => {
   const date = new Date(timestamp)
   const now = new Date()
-  const isToday = date.toDateString() === now.toDateString()
-
-  if (isToday) {
+  if (date.toDateString() === now.toDateString()) {
     return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
   }
   return date.toLocaleDateString([], {
@@ -101,14 +82,6 @@ const formatTime = (timestamp) => {
     minute: '2-digit',
   })
 }
-
-// onMounted(() => {
-//   getAllChats()
-// })
-
-// watch(chatMessages, () => {
-//   nextTick(() => scrollToBottom())
-// })
 </script>
 
 <template>
@@ -119,31 +92,27 @@ const formatTime = (timestamp) => {
           <div class="cdUser011011-status-dot"></div>
           <span>Admin</span>
         </div>
-        <button class="cdUser011011-refresh-btn" :disabled="loading" title="Refresh chat">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="18"
-            height="18"
-            viewBox="0 0 24 24"
-            :class="{ 'cdUser011011-spinning': loading }"
-          >
-            <path
-              fill="currentColor"
-              d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6c0 1.01-.25 1.97-.7 2.8l1.46 1.46A7.93 7.93 0 0 0 20 12c0-4.42-3.58-8-8-8m0 14c-3.31 0-6-2.69-6-6c0-1.01.25-1.97.7-2.8L5.24 7.74A7.93 7.93 0 0 0 4 12c0 4.42 3.58 8 8 8v3l4-4l-4-4z"
-            />
-          </svg>
-        </button>
       </div>
     </div>
 
-    <!-- <div v-if="loading && chatMessages.length === 0" class="cdUser011011-loading-wrapper">
-      <div class="cdUser011011-loader"></div>
-      <p class="cdUser011011-loading-text">Loading messages...</p>
-    </div> -->
-
     <div class="cdUser011011-messages-wrapper">
       <div ref="chatContainerRef" class="cdUser011011-messages-container">
-        <!-- <div v-if="chatMessages.length === 0" class="cdUser011011-empty-state">
+        <div
+          v-for="(msg, i) in chatMessages"
+          :key="i"
+          class="cdUser011011-message-row"
+          :class="msg.sender"
+        >
+          <div class="cdUser011011-message-content">
+            <div class="cdUser011011-bubble-wrapper">
+              <div class="cdUser011011-message-bubble" :class="`cdUser011011-bubble-${msg.sender}`">
+                <p class="cdUser011011-message-text">{{ msg.text }}</p>
+              </div>
+              <span class="cdUser011011-message-time">{{ formatTime(msg.timestamp) }}</span>
+            </div>
+          </div>
+        </div>
+        <div v-if="chatMessages.length === 0" class="cdUser011011-empty-state">
           <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24">
             <path
               fill="currentColor"
@@ -152,52 +121,8 @@ const formatTime = (timestamp) => {
           </svg>
           <p>No messages yet</p>
           <span>Start a conversation below</span>
-        </div> -->
-
-        <!-- <div
-          v-for="(msg, i) in chatMessages"
-          :key="i"
-          class="cdUser011011-message-row"
-          :class="msg.sender"
-        > -->
-        <div class="cdUser011011-message-content">
-          <!-- <div class="cdUser011011-avatar" :class="`cdUser011011-avatar-${msg.sender}`">
-              <svg
-                v-if="msg.sender === 'admin'"
-                xmlns="http://www.w3.org/2000/svg"
-                width="20"
-                height="20"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  fill="currentColor"
-                  d="M12 23C6.443 21.765 2 16.522 2 11V5l10-4l10 4v6c0 5.524-4.443 10.765-10 12M4 6v5a10.58 10.58 0 0 0 8 10a10.58 10.58 0 0 0 8-10V6l-8-3Z"
-                />
-                <circle cx="12" cy="8.5" r="2.5" fill="currentColor" />
-              </svg>
-              <svg
-                v-else
-                xmlns="http://www.w3.org/2000/svg"
-                width="20"
-                height="20"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  fill="currentColor"
-                  d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10s10-4.48 10-10S17.52 2 12 2m0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3s-3-1.34-3-3s1.34-3 3-3m0 14.2a7.2 7.2 0 0 1-6-3.22c.03-1.99 4-3.08 6-3.08c1.99 0 5.97 1.09 6 3.08a7.2 7.2 0 0 1-6 3.22"
-                />
-              </svg>
-            </div> -->
-
-          <div class="cdUser011011-bubble-wrapper">
-            <div class="cdUser011011-message-bubble" :class="`cdUser011011-bubble-${msg.sender}`">
-              <p class="cdUser011011-message-text">{{ msg.text }}</p>
-            </div>
-            <span class="cdUser011011-message-time">{{ formatTime(msg.timestamp) }}</span>
-          </div>
         </div>
       </div>
-      <!-- </div> -->
     </div>
 
     <div class="cdUser011011-input-wrapper">

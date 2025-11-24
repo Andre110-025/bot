@@ -198,15 +198,52 @@ const chatMessages = ref([])
 const newMessage = ref('')
 
 const stored = localStorage.getItem('chatUser')
-const userEmail = stored ? JSON.parse(stored).email : ''
+const data = stored ? JSON.parse(stored) : null
+const userEmail = data?.email || 'guest@example.com'
 
-// Clean website (remove https://, www., and trailing paths)
 const cleanWebsite = props.website
   .replace(/^https?:\/\//, '')
   .replace(/^www\./, '')
   .split('/')[0]
 
-// Scroll to bottom helper
+const sendMessage = async () => {
+  if (!newMessage.value.trim() || sending.value) return
+
+  const messageToSend = newMessage.value.trim()
+  newMessage.value = ''
+
+  // Add message locally for instant feedback
+  chatMessages.value.push({
+    sender: 'user',
+    text: messageToSend,
+    timestamp: Date.now(),
+  })
+  await nextTick()
+  scrollToBottom()
+
+  try {
+    sending.value = true
+    await axios.post('https://assitance.storehive.com.ng/public/api/chat/message', {
+      conversation_id: props.userId + cleanWebsite,
+      message: messageToSend,
+      website: props.website,
+      api: props.api,
+      user_email: userEmail,
+      start_admin_chat: true,
+    })
+  } catch (err) {
+    console.error(err)
+    // On error, show message again
+    chatMessages.value.push({
+      sender: 'user',
+      text: messageToSend,
+      timestamp: Date.now(),
+    })
+  } finally {
+    sending.value = false
+  }
+}
+
 const chatContainerRef = ref(null)
 const scrollToBottom = () => {
   if (chatContainerRef.value) {
@@ -217,43 +254,89 @@ const scrollToBottom = () => {
   }
 }
 
-// Send message function
-const sendMessage = async () => {
-  const messageToSend = newMessage.value.trim()
-  if (!messageToSend || sending.value) return
-
-  // Clear input
-  newMessage.value = ''
-
-  // Show message instantly in UI
-  chatMessages.value.push({
-    sender: 'admin',
-    text: messageToSend,
-    timestamp: Date.now(),
-  })
-  nextTick(() => scrollToBottom())
-
-  try {
-    sending.value = true
-    await axios.post('https://assitance.storehive.com.ng/public/api/chat/message', {
-      conversation_id: props.userId + cleanWebsite,
-      message: messageToSend,
-      website: cleanWebsite,
-      api: props.api,
-      user_email: userEmail,
-      start_admin_chat: true,
-    })
-  } catch (err) {
-    console.error('Failed to send message:', err)
-    // Optionally mark the message as failed
-  } finally {
-    sending.value = false
-  }
-}
-
-// Format timestamp for display
 const formatTime = (timestamp) => {
   const date = new Date(timestamp)
-  return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+  const now = new Date()
+  if (date.toDateString() === now.toDateString()) {
+    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+  }
+  return date.toLocaleDateString([], {
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  })
 }
 </script>
+
+<template>
+  <div class="cdUser011011-chat-container">
+    <div class="cdUser011011-chat-header">
+      <div class="cdUser011011-header-content">
+        <div class="cdUser011011-status-indicator">
+          <div class="cdUser011011-status-dot"></div>
+          <span>Admin</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="cdUser011011-messages-wrapper">
+      <div ref="chatContainerRef" class="cdUser011011-messages-container">
+        <div
+          v-for="(msg, i) in chatMessages"
+          :key="i"
+          class="cdUser011011-message-row"
+          :class="msg.sender"
+        >
+          <div class="cdUser011011-message-content">
+            <div class="cdUser011011-bubble-wrapper">
+              <div class="cdUser011011-message-bubble" :class="`cdUser011011-bubble-${msg.sender}`">
+                <p class="cdUser011011-message-text">{{ msg.text }}</p>
+              </div>
+              <span class="cdUser011011-message-time">{{ formatTime(msg.timestamp) }}</span>
+            </div>
+          </div>
+        </div>
+        <div v-if="chatMessages.length === 0" class="cdUser011011-empty-state">
+          <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24">
+            <path
+              fill="currentColor"
+              d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2m0 14H6l-2 2V4h16z"
+            />
+          </svg>
+          <p>No messages yet</p>
+          <span>Start a conversation below</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="cdUser011011-input-wrapper">
+      <div class="cdUser011011-input-container">
+        <input
+          v-model="newMessage"
+          @keyup.enter="sendMessage"
+          type="text"
+          placeholder="Type your message..."
+          :disabled="sending"
+          class="cdUser011011-message-input"
+        />
+        <button
+          @click="sendMessage"
+          class="cdUser011011-send-btn"
+          :disabled="!newMessage.trim() || sending"
+        >
+          <svg
+            v-if="!sending"
+            xmlns="http://www.w3.org/2000/svg"
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+          >
+            <path fill="currentColor" d="M2.01 21L23 12L2.01 3L2 10l15 2l-15 2z" />
+          </svg>
+          <div v-else class="cdUser011011-btn-loader"></div>
+        </button>
+      </div>
+    </div>
+  </div>
+</template>
