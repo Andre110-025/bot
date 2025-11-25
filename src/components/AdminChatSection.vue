@@ -46,7 +46,7 @@ const getMessage = async () => {
     )
     console.log('Session messages:', sessionId)
     // console.log(userConverasationId, website)
-    chatMessages.value = response.data.data || []
+    chatMessages.value = response.data.data?.messages || []
   } catch (error) {
     console.error('Failed to fetch all request:', error)
   } finally {
@@ -110,7 +110,9 @@ const sendMessage = async () => {
     )
     console.log(response)
     newMessage.value = ''
-    await getMessage()
+    setTimeout(async () => {
+      await getMessage()
+    }, 10000)
   } catch (err) {
     console.error(err)
     // On error, show message again
@@ -193,7 +195,7 @@ onMounted(async () => {
           <div class="cdUser011011-message-content">
             <div class="cdUser011011-bubble-wrapper">
               <div class="cdUser011011-message-bubble" :class="`cdUser011011-bubble-${msg.sender}`">
-                <p class="cdUser011011-message-text">{{ msg.text }}</p>
+                <p class="cdUser011011-message-text">{{ msg.message }}</p>
               </div>
               <span class="cdUser011011-message-time">{{ formatTime(msg.timestamp) }}</span>
             </div>
