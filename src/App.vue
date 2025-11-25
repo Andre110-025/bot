@@ -284,10 +284,6 @@ const handleAdminRedirect = () => {
   showUserBotChat.value = false
 }
 
-const userStoredData = localStorage.getItem('chatUser')
-const userData = userStoredData ? JSON.parse(userStoredData) : null
-const userEmail = userData?.email || ''
-
 // const storedConversationId = localStorage.getItem('chat_user_id')
 // const conversationId = storedConversationId
 // const sessionId = conversationId
@@ -299,6 +295,10 @@ const sendToAdmin = async (userMessage = '') => {
     messageToSend = 'User requested to speak with a representative.'
   }
 
+  const userStoredData = localStorage.getItem('chatUser')
+  const userData = userStoredData ? JSON.parse(userStoredData) : null
+  const userEmail = userData?.email
+
   showUserBotChat.value = false
   const response = await axios.post('https://assitance.storehive.com.ng/public/api/chat/message', {
     message: messageToSend,
@@ -309,8 +309,7 @@ const sendToAdmin = async (userMessage = '') => {
     user_email: userEmail,
   })
   console.log('[Sending to Admin] conversation_id:', userId.value)
-  // console.log(response)
-  // console.log(triggeringUserMessage.value)
+  console.log(userEmail)
   localStorage.setItem(
     'adminMode',
     JSON.stringify({
