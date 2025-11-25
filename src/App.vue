@@ -217,10 +217,6 @@ const getResponse = async (inputText) => {
   }
 }
 
-// const stored = localStorage.getItem('chatUser')
-// const data = stored ? JSON.parse(stored) : null
-// const userEmail = data.email
-
 // console.log(userEmail)
 
 // const cleanWebsite = props.website
@@ -290,7 +286,7 @@ const handleAdminRedirect = () => {
 
 const userStoredData = localStorage.getItem('chatUser')
 const userData = userStoredData ? JSON.parse(userStoredData) : null
-const userEmail = userData?.email
+const userEmail = userData.email
 
 // const storedConversationId = localStorage.getItem('chat_user_id')
 // const conversationId = storedConversationId
