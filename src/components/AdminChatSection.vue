@@ -54,11 +54,9 @@ const getMessage = async () => {
   }
 }
 
-onMounted(() => {
-  setTimeout(() => {
-    getMessage()
-  }, 5000)
-})
+// onMounted(() => {
+//   getMessage()
+// })
 
 // onMounted(async () => {
 //   const stored = localStorage.getItem(`chatMessages_${props.userId}`);
@@ -93,15 +91,7 @@ const sendMessage = async () => {
   if (!newMessage.value.trim() || sending.value) return
 
   const messageToSend = newMessage.value.trim()
-
-  // Add message locally for instant feedback
-  addMessage({
-    sender: 'user',
-    text: messageToSend,
-    timestamp: Date.now(),
-  })
-  await nextTick()
-  scrollToBottom()
+  newMessage.value = '' // Clear input immediately
 
   try {
     sending.value = true
@@ -114,19 +104,15 @@ const sendMessage = async () => {
         sender_type: 'user',
       },
     )
-    console.log(response)
-    newMessage.value = ''
-    setTimeout(async () => {
-      await getMessage()
-    }, 10000)
+
+    await new Promise((resolve) => setTimeout(resolve, 500))
+
+    await getMessage()
+    await nextTick()
+    scrollToBottom()
   } catch (err) {
     console.error(err)
-    // On error, show message again
-    addMessage({
-      sender: 'user',
-      text: messageToSend,
-      timestamp: Date.now(),
-    })
+    newMessage.value = messageToSend // Restore message on error
   } finally {
     sending.value = false
   }
