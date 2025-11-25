@@ -33,15 +33,15 @@ const addMessage = (msg) => {
   message.value.push(msg)
   saveMessages()
 }
-const session_Id = getUserId(props.website)
-const sessionId = session_Id + props.website
+const session_Id = getUserId(cleanWebsite)
+const sessionId = session_Id + cleanWebsite
 
 // const storedConversationId = localStorage.getItem('chat_user_id')
 // const conversationId = storedConversationId
 // const sessionId = conversationId
 
 const getMessage = async () => {
-  if (!props.website) return
+  if (!cleanWebsite) return
   try {
     loading.value = true
     const response = await axios.get(
