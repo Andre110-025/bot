@@ -299,6 +299,7 @@ const sendToAdmin = async () => {
     }),
   )
 }
+console.log(lastUserMessage.value)
 
 onMounted(() => {
   const saved = localStorage.getItem('adminMode')
