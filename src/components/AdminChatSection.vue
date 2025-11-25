@@ -50,7 +50,7 @@ const getMessage = async () => {
         website: props.website,
       },
     )
-    console.log('Session messages:', response.data)
+    console.log('Session messages:', response)
     // console.log(userConverasationId, website)
     chatMessages.value = response.data.data || []
   } catch (error) {

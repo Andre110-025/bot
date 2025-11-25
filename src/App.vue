@@ -217,6 +217,8 @@ const cleanWebsite = props.website
   .replace(/^www\./, '')
   .split('/')[0]
 
+const userConvo = sessionId + cleanWebsite
+
 async function getGeminiResponse(userText) {
   try {
     const response = await axios.post(
@@ -224,13 +226,13 @@ async function getGeminiResponse(userText) {
       {
         message: userText,
         website: props.website,
-        conversation_id: sessionId + cleanWebsite,
+        conversation_id: userConvo,
         api: props.api,
         start_admin_chat: false,
         // user_email: null,
       },
     )
-    console.log('[Gemini Response conversation_id]:', conversation_id)
+    console.log('[Gemini Response conversation_id]:', userConvo)
     return response.data.data.response
   } catch (err) {
     console.error('Error calling Gemini API:', err)
@@ -294,12 +296,12 @@ const sendToAdmin = async (userMessage = '') => {
   const response = await axios.post('https://assitance.storehive.com.ng/public/api/chat/message', {
     message: messageToSend,
     website: props.website,
-    conversation_id: sessionId + cleanWebsite,
+    conversation_id: userConvo,
     api: props.api,
     start_admin_chat: true,
     user_email: userEmail,
   })
-  console.log('[Sending to Admin] conversation_id:', conversation_id)
+  console.log('[Sending to Admin] conversation_id:', userConvo)
   // console.log(response)
   // console.log(triggeringUserMessage.value)
   localStorage.setItem(
