@@ -55,7 +55,9 @@ const getMessage = async () => {
 }
 
 onMounted(() => {
-  getMessage()
+  setTimeout(() => {
+    getMessage()
+  }, 5000)
 })
 
 // onMounted(async () => {
