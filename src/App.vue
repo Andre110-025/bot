@@ -18,7 +18,7 @@ const charTimers = {} // timing for all typing animation
 const lastUserMessage = ref('')
 const showUserBotChat = ref(true)
 const adminMessages = ref([])
-let userId = localStorage.getItem('userId')
+// let userId = localStorage.getItem('userId')
 // watch: reacts to reactive variable changes.
 const props = defineProps({
   website: {
@@ -33,12 +33,19 @@ const props = defineProps({
   },
 })
 
-if (!userId) {
-  userId = getUserId()
-  localStorage.setItem('userId', userId)
-}
+const userId = ref(localStorage.getItem('userId') || '')
+const cleanWebsite = props.website
+  .replace(/^https?:\/\//, '')
+  .replace(/^www\./, '')
+  .split('/')[0]
 
-const sessionId = getUserId(props.website)
+onMounted(() => {
+  if (!userId.value) {
+    userId.value = getUserId(cleanWebsite) // pass the website prop
+    localStorage.setItem('userId', userId.value)
+  }
+  console.log('UserID:', userId.value)
+})
 
 const togglePopup = () => {
   showPopup.value = !showPopup.value
@@ -212,12 +219,12 @@ const getResponse = async (inputText) => {
 
 // console.log(userEmail)
 
-const cleanWebsite = props.website
-  .replace(/^https?:\/\//, '')
-  .replace(/^www\./, '')
-  .split('/')[0]
+// const cleanWebsite = props.website
+//   .replace(/^https?:\/\//, '')
+//   .replace(/^www\./, '')
+//   .split('/')[0]
 
-const userConvo = sessionId + cleanWebsite
+// const userConvo = sessionId + cleanWebsite
 
 async function getGeminiResponse(userText) {
   try {
@@ -226,13 +233,13 @@ async function getGeminiResponse(userText) {
       {
         message: userText,
         website: props.website,
-        conversation_id: userConvo,
+        conversation_id: userId.value,
         api: props.api,
         start_admin_chat: false,
         // user_email: null,
       },
     )
-    console.log('[Gemini Response conversation_id]:', userConvo)
+    console.log('[Gemini Response conversation_id]:', userId.value)
     return response.data.data.response
   } catch (err) {
     console.error('Error calling Gemini API:', err)
@@ -296,12 +303,12 @@ const sendToAdmin = async (userMessage = '') => {
   const response = await axios.post('https://assitance.storehive.com.ng/public/api/chat/message', {
     message: messageToSend,
     website: props.website,
-    conversation_id: userConvo,
+    conversation_id: userId.value,
     api: props.api,
     start_admin_chat: true,
     user_email: userEmail,
   })
-  console.log('[Sending to Admin] conversation_id:', userConvo)
+  console.log('[Sending to Admin] conversation_id:', userId.value)
   // console.log(response)
   // console.log(triggeringUserMessage.value)
   localStorage.setItem(
