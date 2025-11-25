@@ -107,9 +107,13 @@ const saveMessages = () => {
 
 const addMessage = (msg) => {
   messages.value.push(msg)
+
+  if (msg.sender === 'user') {
+    lastUserMessage.value = msg.message // or msg.text depending on your message format
+  }
+
   saveMessages()
 }
-// so this function now pushes the message
 
 // typing animation one character at a time
 const typeMessage = (index, fullText) => {
