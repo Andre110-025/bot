@@ -1,5 +1,5 @@
 <script setup>
-import { ref, nextTick, onMounted } from 'vue'
+import { ref, nextTick, onMounted, onBeforeUnmount } from 'vue'
 import axios from 'axios'
 import getUserId from './utils/userId'
 
@@ -14,6 +14,7 @@ const loading = ref(false)
 const chatMessages = ref([])
 const allChats = ref([])
 const newMessage = ref('')
+// const chatContainerRef = ref(null)
 
 const cleanWebsite = props.website
   .replace(/^https?:\/\//, '')
@@ -45,8 +46,10 @@ const getMessage = async () => {
       { params: { website: props.website } },
     )
     console.log('Session messages:', sessionId)
-    // console.log(userConverasationId, website)
     chatMessages.value = response.data.data?.messages || []
+    await nextTick()
+    scrollToBottom()
+    saveMessages()
   } catch (error) {
     console.error('Failed to fetch all request:', error)
   } finally {
@@ -83,49 +86,6 @@ const addMessage = (msg) => {
   nextTick().then(scrollToBottom)
 }
 
-const sendMessage = async () => {
-  if (!newMessage.value.trim() || sending.value) return
-
-  const messageToSend = newMessage.value.trim()
-
-  // Add message locally for instant feedback
-  addMessage({
-    sender: 'user',
-    text: messageToSend,
-    timestamp: Date.now(),
-  })
-  await nextTick()
-  scrollToBottom()
-
-  try {
-    sending.value = true
-    const response = await axios.post(
-      'https://assitance.storehive.com.ng/public/api/chat/admin/message',
-      {
-        session_id: sessionId,
-        message: messageToSend,
-        website: props.website,
-        sender_type: 'user',
-      },
-    )
-    console.log(response)
-    newMessage.value = ''
-    setTimeout(async () => {
-      await getMessage()
-    }, 10000)
-  } catch (err) {
-    console.error(err)
-    // On error, show message again
-    addMessage({
-      sender: 'user',
-      text: messageToSend,
-      timestamp: Date.now(),
-    })
-  } finally {
-    sending.value = false
-  }
-}
-
 const chatContainerRef = ref(null)
 const scrollToBottom = () => {
   if (chatContainerRef.value) {
@@ -150,6 +110,49 @@ const formatTime = (timestamp) => {
   })
 }
 
+const sendMessage = async () => {
+  if (!newMessage.value.trim() || sending.value) return
+
+  const messageToSend = newMessage.value.trim()
+
+  // Add message locally for instant feedback
+  addMessage({
+    sender: 'user',
+    text: messageToSend,
+    timestamp: Date.now(),
+  })
+  newMessage.value = ''
+  // await nextTick()
+  // scrollToBottom()
+
+  try {
+    sending.value = true
+    const response = await axios.post(
+      'https://assitance.storehive.com.ng/public/api/chat/admin/message',
+      {
+        session_id: sessionId,
+        message: messageToSend,
+        website: props.website,
+        sender_type: 'user',
+      },
+    )
+    console.log(response)
+    await new Promise((resolve) => setTimeout(resolve, 500)) // optional small delay
+    await getMessage()
+  } catch (err) {
+    console.error(err)
+    // On error, show message again
+    addMessage({
+      sender: 'user',
+      text: messageToSend,
+      timestamp: Date.now(),
+    })
+  } finally {
+    sending.value = false
+  }
+}
+
+let pollInterval
 onMounted(async () => {
   const stored = localStorage.getItem(`chatMessages_${props.userId}`)
   const oneDay = 1 * 24 * 60 * 60 * 1000
@@ -163,13 +166,18 @@ onMounted(async () => {
       chatMessages.value = data.chatMessages
       await nextTick()
       scrollToBottom()
-      getMessage() // optionally refresh anyway
+      await getMessage()
     }
   } else {
     await getMessage() // no stored data
-    await nextTick()
-    scrollToBottom()
+    // await nextTick()
+    // scrollToBottom()
   }
+
+  pollInterval = setInterval(getMessage, 5000)
+})
+onBeforeUnmount(() => {
+  if (pollInterval) clearInterval(pollInterval)
 })
 </script>
 
@@ -195,7 +203,7 @@ onMounted(async () => {
           <div class="cdUser011011-message-content">
             <div class="cdUser011011-bubble-wrapper">
               <div class="cdUser011011-message-bubble" :class="`cdUser011011-bubble-${msg.sender}`">
-                <p class="cdUser011011-message-text">{{ msg.message }}</p>
+                <p class="cdUser011011-message-text">{{ msg.text }}</p>
               </div>
               <span class="cdUser011011-message-time">{{ formatTime(msg.timestamp) }}</span>
             </div>
