@@ -1,7 +1,6 @@
 <script setup>
 import { ref, nextTick, onMounted } from 'vue'
 import axios from 'axios'
-// Assuming getUserId is correctly imported and returns the session ID
 import getUserId from './utils/userId'
 
 const props = defineProps({
@@ -13,6 +12,7 @@ const props = defineProps({
 const sending = ref(false)
 const loading = ref(false)
 const chatMessages = ref([])
+const allChats = ref([])
 const newMessage = ref('')
 
 const cleanWebsite = props.website
@@ -20,40 +20,33 @@ const cleanWebsite = props.website
   .replace(/^www\./, '')
   .split('/')[0]
 
-// Synchronous sessionId retrieval (runs before setup completes)
-const sessionId = getUserId(cleanWebsite)
-console.log('admin-side sessionId:', sessionId)
-
-// --- Utility Functions ---
-
 const saveMessages = () => {
-  if (!props.userId || chatMessages.value.length === 0) return
+  if (!props.userId) return
   const payload = {
     timestamp: Date.now(),
     chatMessages: chatMessages.value,
   }
-  // Saving based on props.userId for isolation, but using sessionId for fetching/sending.
   localStorage.setItem(`chatMessages_${props.userId}`, JSON.stringify(payload))
 }
+const sessionId = getUserId(cleanWebsite)
+console.log('admin-side:', sessionId)
+// const sessionId = session_Id + cleanWebsite
+
+// const storedConversationId = localStorage.getItem('chat_user_id')
+// const conversationId = storedConversationId
+// const sessionId = conversationId
 
 const getMessage = async () => {
-  // CRITICAL FIX 1: Check if sessionId exists before making the API call.
-  if (!cleanWebsite || !sessionId) {
-    console.warn('Skipping message fetch: Website or Session ID not ready.')
-    return
-  }
+  if (!cleanWebsite) return
   try {
     loading.value = true
     const response = await axios.get(
       `https://assitance.storehive.com.ng/public/api/chat/admin/session/${sessionId}`,
       { params: { website: props.website } },
     )
-    console.log('Successfully fetched session messages for:', sessionId)
-    // Assuming the messages array contains objects with a 'sender' property ('user' or 'admin')
+    console.log('Session messages:', sessionId)
+    // console.log(userConverasationId, website)
     chatMessages.value = response.data.data?.messages || []
-
-    await nextTick()
-    scrollToBottom()
   } catch (error) {
     console.error('Failed to fetch all request:', error)
   } finally {
@@ -61,56 +54,76 @@ const getMessage = async () => {
   }
 }
 
+onMounted(() => {
+  getMessage()
+})
+
+// onMounted(async () => {
+//   const stored = localStorage.getItem(`chatMessages_${props.userId}`);
+//   const oneDay = 1 * 24 * 60 * 60 * 1000;
+
+//   if (stored) {
+//     const data = JSON.parse(stored);
+//     if (!data.timestamp || Date.now() - data.timestamp > oneDay) {
+//       localStorage.removeItem(`chatMessages_${props.userId}`);
+//       await getMessage(); // fetch from backend if no valid stored data
+//     } else {
+//       chatMessages.value = data.chatMessages;
+//       await nextTick();
+//       scrollToBottom();
+//       // optionally refresh from server anyway
+//       getMessage();
+//     }
+//   } else {
+//     await getMessage(); // no local storage, fetch previous messages
+//     await nextTick();
+//     scrollToBottom();
+//   }
+// });
+
+const addMessage = (msg) => {
+  chatMessages.value.push(msg)
+  saveMessages()
+  nextTick().then(scrollToBottom)
+}
+
 const sendMessage = async () => {
-  if (!newMessage.value.trim() || sending.value || !sessionId) return
+  if (!newMessage.value.trim() || sending.value) return
 
   const messageToSend = newMessage.value.trim()
   newMessage.value = '' // Clear input immediately
 
-  // Optimistically add the message to the UI
-  // Add message with sender: 'admin' so it appears on the LEFT
-  chatMessages.value.push({
-    message: messageToSend,
-    sender: 'admin',
-    timestamp: Date.now(),
-  })
-  nextTick().then(scrollToBottom)
-
   try {
     sending.value = true
-    await axios.post('https://assitance.storehive.com.ng/public/api/chat/admin/message', {
-      session_id: sessionId,
-      message: messageToSend,
-      website: props.website,
-      // CRITICAL FIX 2: Admin is sending the reply, so sender_type must be 'admin'
-      sender_type: 'admin',
-    })
+    const response = await axios.post(
+      'https://assitance.storehive.com.ng/public/api/chat/admin/message',
+      {
+        session_id: sessionId,
+        message: messageToSend,
+        website: props.website,
+        sender_type: 'user',
+      },
+    )
 
-    // Optional: wait a moment for the backend to process
-    // await new Promise((resolve) => setTimeout(resolve, 500))
+    await new Promise((resolve) => setTimeout(resolve, 500))
 
-    // Refresh all messages from the backend to ensure conversation continuity
     await getMessage()
+    await nextTick()
+    scrollToBottom()
   } catch (err) {
     console.error(err)
-    // If API failed, you might want to remove the message we optimistically added
-    chatMessages.value.pop()
     newMessage.value = messageToSend // Restore message on error
   } finally {
     sending.value = false
-    saveMessages()
   }
 }
 
 const chatContainerRef = ref(null)
 const scrollToBottom = () => {
   if (chatContainerRef.value) {
-    // Use requestAnimationFrame for smoother scrolling if it's struggling
-    requestAnimationFrame(() => {
-      chatContainerRef.value.scrollTo({
-        top: chatContainerRef.value.scrollHeight,
-        behavior: 'smooth',
-      })
+    chatContainerRef.value.scrollTo({
+      top: chatContainerRef.value.scrollHeight,
+      behavior: 'smooth',
     })
   }
 }
@@ -129,14 +142,7 @@ const formatTime = (timestamp) => {
   })
 }
 
-// --- Combined OnMounted Hook for Auth and Fetching ---
 onMounted(async () => {
-  // CRITICAL FIX 3: If the session ID is not available immediately, stop.
-  if (!sessionId) {
-    console.error('Session ID is null/undefined on mount. Aborting message load.')
-    return
-  }
-
   const stored = localStorage.getItem(`chatMessages_${props.userId}`)
   const oneDay = 1 * 24 * 60 * 60 * 1000
 
@@ -144,16 +150,19 @@ onMounted(async () => {
     const data = JSON.parse(stored)
     if (!data.timestamp || Date.now() - data.timestamp > oneDay) {
       localStorage.removeItem(`chatMessages_${props.userId}`)
-      await getMessage() // fetch from backend if local data is expired
+      await getMessage() // fetch from backend
     } else {
       chatMessages.value = data.chatMessages
       await nextTick()
       scrollToBottom()
-      // Still refresh from server after showing local data to get latest messages
-      setTimeout(getMessage, 500) // Small delay to prevent network contention
+      setTimeout(() => {
+        getMessage()
+      }, 10000)
     }
   } else {
-    await getMessage() // no stored data, fetch previous messages
+    await getMessage() // no stored data
+    await nextTick()
+    scrollToBottom()
   }
 })
 </script>
@@ -164,35 +173,12 @@ onMounted(async () => {
       <div class="cdUser011011-header-content">
         <div class="cdUser011011-status-indicator">
           <div class="cdUser011011-status-dot"></div>
-          <span>Admin Panel | Session: {{ sessionId.substring(0, 8) }}...</span>
+          <span>Admin</span>
         </div>
-        <button
-          @click="getMessage"
-          :disabled="loading || sending"
-          class="cdUser011011-refresh-btn"
-          title="Refresh Messages"
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="20"
-            height="20"
-            viewBox="0 0 24 24"
-            :class="{ 'cdUser011011-spinning': loading }"
-          >
-            <path
-              fill="currentColor"
-              d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.77 2.2-2.89 3.8-5.65 3.8c-3.31 0-6-2.69-6-6s2.69-6 6-6c1.01 0 1.97.23 2.8.64l-3.1-3.1H19V2z"
-            />
-          </svg>
-        </button>
       </div>
     </div>
 
     <div class="cdUser011011-messages-wrapper">
-      <div v-if="loading && chatMessages.length === 0" class="cdUser011011-loading-wrapper">
-        <div class="cdUser011011-loader"></div>
-        <p class="cdUser011011-loading-text">Loading chat history...</p>
-      </div>
       <div ref="chatContainerRef" class="cdUser011011-messages-container">
         <div
           v-for="(msg, i) in chatMessages"
@@ -200,7 +186,6 @@ onMounted(async () => {
           class="cdUser011011-message-row"
           :class="msg.sender"
         >
-          <!-- Avatars are not used but kept in CSS for future extension -->
           <div class="cdUser011011-message-content">
             <div class="cdUser011011-bubble-wrapper">
               <div class="cdUser011011-message-bubble" :class="`cdUser011011-bubble-${msg.sender}`">
@@ -210,8 +195,7 @@ onMounted(async () => {
             </div>
           </div>
         </div>
-
-        <div v-if="chatMessages.length === 0 && !loading" class="cdUser011011-empty-state">
+        <div v-if="chatMessages.length === 0" class="cdUser011011-empty-state">
           <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24">
             <path
               fill="currentColor"
@@ -219,7 +203,7 @@ onMounted(async () => {
             />
           </svg>
           <p>No messages yet</p>
-          <span>Awaiting the first customer interaction</span>
+          <span>Start a conversation below</span>
         </div>
       </div>
     </div>
@@ -230,7 +214,7 @@ onMounted(async () => {
           v-model="newMessage"
           @keyup.enter="sendMessage"
           type="text"
-          placeholder="Type your reply to the user..."
+          placeholder="Type your message..."
           :disabled="sending"
           class="cdUser011011-message-input"
         />
@@ -256,9 +240,6 @@ onMounted(async () => {
 </template>
 
 <style>
-/* ------------------------------------------------------------------- */
-/* GLOBAL STYLES & CONTAINER */
-/* ------------------------------------------------------------------- */
 .cdUser011011-chat-container {
   display: flex;
   flex-direction: column;
@@ -269,27 +250,24 @@ onMounted(async () => {
     -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', sans-serif;
   border-radius: 12px;
   overflow: hidden;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  box-shadow:
+    0 4px 6px -1px rgba(0, 0, 0, 0.1),
+    0 2px 4px -1px rgba(0, 0, 0, 0.06);
 }
 
-/* ------------------------------------------------------------------- */
-/* HEADER */
-/* ------------------------------------------------------------------- */
 .cdUser011011-chat-header {
   background: #ffffff;
   border-bottom: 1px solid #e5e7eb;
-  padding: 14px 20px;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+  padding: 16px 20px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
   flex-shrink: 0;
-  display: flex;
-  align-items: center;
 }
 
 .cdUser011011-header-content {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  width: 100%;
+  margin: 0;
 }
 
 .cdUser011011-status-indicator {
@@ -299,6 +277,7 @@ onMounted(async () => {
   font-weight: 600;
   font-size: 15px;
   color: #111827;
+  margin: 0;
 }
 
 .cdUser011011-status-dot {
@@ -323,9 +302,10 @@ onMounted(async () => {
   background: transparent;
   border: none;
   padding: 8px;
+  margin: 0;
   cursor: pointer;
   color: #6b7280;
-  border-radius: 50%;
+  border-radius: 6px;
   transition: all 0.2s;
   display: flex;
   align-items: center;
@@ -355,10 +335,7 @@ onMounted(async () => {
   }
 }
 
-/* ------------------------------------------------------------------- */
-/* MESSAGES AREA */
-/* ------------------------------------------------------------------- */
-
+/* Loading State */
 .cdUser011011-loading-wrapper {
   display: flex;
   flex-direction: column;
@@ -381,8 +358,10 @@ onMounted(async () => {
 .cdUser011011-loading-text {
   color: #6b7280;
   font-size: 14px;
+  margin: 0;
 }
 
+/* Messages Area */
 .cdUser011011-messages-wrapper {
   flex: 1;
   overflow: hidden;
@@ -400,17 +379,19 @@ onMounted(async () => {
   scroll-behavior: smooth;
 }
 
-/* Scrollbar styles (optional but nice) */
 .cdUser011011-messages-container::-webkit-scrollbar {
   width: 6px;
 }
+
 .cdUser011011-messages-container::-webkit-scrollbar-track {
   background: transparent;
 }
+
 .cdUser011011-messages-container::-webkit-scrollbar-thumb {
   background: #d1d5db;
   border-radius: 3px;
 }
+
 .cdUser011011-messages-container::-webkit-scrollbar-thumb:hover {
   background: #9ca3af;
 }
@@ -426,23 +407,29 @@ onMounted(async () => {
   gap: 8px;
   padding: 20px;
 }
+
 .cdUser011011-empty-state svg {
   opacity: 0.5;
   margin-bottom: 8px;
 }
+
 .cdUser011011-empty-state p {
+  margin: 0;
   font-size: 16px;
   font-weight: 500;
   color: #6b7280;
 }
+
 .cdUser011011-empty-state span {
   font-size: 14px;
   color: #9ca3af;
+  margin: 0;
 }
 
 /* Message Row */
 .cdUser011011-message-row {
   display: flex;
+  margin: 0;
   animation: cdUser011011-slideIn 0.3s ease-out;
 }
 
@@ -457,13 +444,10 @@ onMounted(async () => {
   }
 }
 
-/* ALIGNMENT LOGIC: */
-
-/* Admin messages (Replies) go LEFT */
 .cdUser011011-message-row.admin {
   justify-content: flex-start;
 }
-/* User messages (Initial queries & subsequent user inputs) go RIGHT */
+
 .cdUser011011-message-row.user {
   justify-content: flex-end;
 }
@@ -473,11 +457,34 @@ onMounted(async () => {
   gap: 10px;
   max-width: 75%;
   align-items: flex-end;
+  margin: 0;
 }
 
-/* Ensure content flow is reversed for right-aligned bubbles */
 .cdUser011011-message-row.user .cdUser011011-message-content {
   flex-direction: row-reverse;
+}
+
+/* Avatar */
+.cdUser011011-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  margin: 0;
+}
+
+.cdUser011011-avatar-admin {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+}
+
+.cdUser011011-avatar-user {
+  background: linear-gradient(135deg, #009970 0%, #00b383 100%);
+  color: white;
 }
 
 /* Bubble Wrapper */
@@ -485,6 +492,7 @@ onMounted(async () => {
   display: flex;
   flex-direction: column;
   gap: 4px;
+  margin: 0;
 }
 
 .cdUser011011-message-row.user .cdUser011011-bubble-wrapper {
@@ -500,21 +508,18 @@ onMounted(async () => {
   word-wrap: break-word;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
   position: relative;
+  margin: 0;
 }
 
-/* STYLE: Admin (Left) - Use a light/neutral color */
 .cdUser011011-bubble-admin {
-  background: #ffffff; /* White background */
+  background: #ffffff;
   color: #1f2937;
-  /* Pointy bottom-left corner */
   border-bottom-left-radius: 4px;
 }
 
-/* STYLE: User (Right) - Use a prominent color */
 .cdUser011011-bubble-user {
-  background: linear-gradient(135deg, #009970 0%, #00b383 100%); /* Green gradient */
+  background: linear-gradient(135deg, #009970 0%, #00b383 100%);
   color: #ffffff;
-  /* Pointy bottom-right corner */
   border-bottom-right-radius: 4px;
 }
 
@@ -527,16 +532,15 @@ onMounted(async () => {
   font-size: 11px;
   color: #9ca3af;
   padding: 0 4px;
+  margin: 0;
 }
 
-/* ------------------------------------------------------------------- */
-/* INPUT AREA */
-/* ------------------------------------------------------------------- */
+/* Input Area */
 .cdUser011011-input-wrapper {
   background: #ffffff;
   border-top: 1px solid #e5e7eb;
   padding: 16px 20px;
-  box-shadow: 0 -1px 4px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 -1px 2px rgba(0, 0, 0, 0.05);
   flex-shrink: 0;
 }
 
@@ -544,6 +548,7 @@ onMounted(async () => {
   display: flex;
   gap: 12px;
   align-items: center;
+  margin: 0;
 }
 
 .cdUser011011-message-input {
@@ -555,6 +560,7 @@ onMounted(async () => {
   outline: none;
   transition: all 0.2s;
   background: #f9fafb;
+  margin: 0;
 }
 
 .cdUser011011-message-input:focus {
@@ -582,6 +588,8 @@ onMounted(async () => {
   transition: all 0.2s;
   box-shadow: 0 2px 4px rgba(0, 153, 112, 0.3);
   flex-shrink: 0;
+  margin: 0;
+  padding: 0;
 }
 
 .cdUser011011-send-btn:hover:not(:disabled) {
