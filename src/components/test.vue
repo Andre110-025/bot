@@ -267,6 +267,10 @@ const formatTime = (timestamp) => {
     minute: '2-digit',
   })
 }
+
+const response = await axios.get(`/chat/admin/session/${sessionId}`, {
+  params: { website: finalWebsite },
+})
 </script>
 
 <template>

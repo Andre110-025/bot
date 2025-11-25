@@ -28,11 +28,6 @@ const saveMessages = () => {
   }
   localStorage.setItem(`chatMessages_${props.userId}`, JSON.stringify(payload))
 }
-
-const addMessage = (msg) => {
-  message.value.push(msg)
-  saveMessages()
-}
 const session_Id = getUserId(cleanWebsite)
 const sessionId = session_Id + cleanWebsite
 
@@ -46,9 +41,7 @@ const getMessage = async () => {
     loading.value = true
     const response = await axios.get(
       `https://assitance.storehive.com.ng/public/api/chat/admin/session/${sessionId}`,
-      {
-        website: props.website,
-      },
+      { params: { website: props.website } },
     )
     console.log('Session messages:', sessionId)
     // console.log(userConverasationId, website)
@@ -60,9 +53,34 @@ const getMessage = async () => {
   }
 }
 
-// onMounted(() => {
-//   getMessage()
-// })
+// onMounted(async () => {
+//   const stored = localStorage.getItem(`chatMessages_${props.userId}`);
+//   const oneDay = 1 * 24 * 60 * 60 * 1000;
+
+//   if (stored) {
+//     const data = JSON.parse(stored);
+//     if (!data.timestamp || Date.now() - data.timestamp > oneDay) {
+//       localStorage.removeItem(`chatMessages_${props.userId}`);
+//       await getMessage(); // fetch from backend if no valid stored data
+//     } else {
+//       chatMessages.value = data.chatMessages;
+//       await nextTick();
+//       scrollToBottom();
+//       // optionally refresh from server anyway
+//       getMessage();
+//     }
+//   } else {
+//     await getMessage(); // no local storage, fetch previous messages
+//     await nextTick();
+//     scrollToBottom();
+//   }
+// });
+
+const addMessage = (msg) => {
+  chatMessages.value.push(msg)
+  saveMessages()
+  nextTick().then(scrollToBottom)
+}
 
 const sendMessage = async () => {
   if (!newMessage.value.trim() || sending.value) return
@@ -129,7 +147,7 @@ const formatTime = (timestamp) => {
   })
 }
 
-onMounted(() => {
+onMounted(async () => {
   const stored = localStorage.getItem(`chatMessages_${props.userId}`)
   const oneDay = 1 * 24 * 60 * 60 * 1000
 
@@ -137,9 +155,17 @@ onMounted(() => {
     const data = JSON.parse(stored)
     if (!data.timestamp || Date.now() - data.timestamp > oneDay) {
       localStorage.removeItem(`chatMessages_${props.userId}`)
+      await getMessage() // fetch from backend
     } else {
       chatMessages.value = data.chatMessages
+      await nextTick()
+      scrollToBottom()
+      getMessage() // optionally refresh anyway
     }
+  } else {
+    await getMessage() // no stored data
+    await nextTick()
+    scrollToBottom()
   }
 })
 </script>
