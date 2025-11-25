@@ -33,19 +33,22 @@ const addMessage = (msg) => {
   saveMessages()
 }
 
-const userConverasationId = props.userId + cleanWebsite
+const storedConversationId = localStorage.getItem('chat_user_id')
+const conversationId = storedConversationId
+const sessionId = conversationId
 
 const getMessage = async () => {
   if (!props.website) return
   try {
     loading.value = true
     const response = await axios.get(
-      `https://assitance.storehive.com.ng/public/api/chat/admin/session/${userConverasationId}`,
+      `https://assitance.storehive.com.ng/public/api/chat/admin/session/${sessionId}`,
       {
         website: props.website,
       },
     )
-    console.log(response)
+    console.log('Session messages:', response.data)
+    // console.log(userConverasationId, website)
     chatMessages.value = response.data.data || []
   } catch (error) {
     console.error('Failed to fetch all request:', error)
@@ -77,7 +80,7 @@ const sendMessage = async () => {
     const response = await axios.post(
       'https://assitance.storehive.com.ng/public/api/chat/admin/message',
       {
-        session_id: userConverasationId,
+        session_id: sessionId,
         message: messageToSend,
         website: props.website,
         sender_type: 'user',

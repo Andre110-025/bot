@@ -294,8 +294,8 @@ const sendToAdmin = async (userMessage = '') => {
     start_admin_chat: true,
     user_email: userEmail,
   })
-  console.log(response)
-  console.log(triggeringUserMessage.value)
+  // console.log(response)
+  // console.log(triggeringUserMessage.value)
   localStorage.setItem(
     'adminMode',
     JSON.stringify({
