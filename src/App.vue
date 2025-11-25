@@ -13,7 +13,7 @@ const messages = ref([{ text: 'Hey there, I’m NexDre. How can I help you today
 const typingMessageIndex = ref(-1)
 const displayedTexts = ref({}) // this is the Text being typed per message, for animation
 const chatContainer = ref(null)
-// let charTimer = null
+const triggeringUserMessage = ref('')
 const charTimers = {} // timing for all typing animation
 const lastUserMessage = ref('')
 const showUserBotChat = ref(true)
@@ -107,13 +107,9 @@ const saveMessages = () => {
 
 const addMessage = (msg) => {
   messages.value.push(msg)
-
-  if (msg.sender === 'user') {
-    lastUserMessage.value = msg.message // or msg.text depending on your message format
-  }
-
   saveMessages()
 }
+// so this function now pushes the message
 
 // typing animation one character at a time
 const typeMessage = (index, fullText) => {
@@ -187,7 +183,7 @@ const getResponse = async (inputText) => {
     const shouldShowButton = terms.some((term) => reply.toLowerCase().includes(term.toLowerCase()))
 
     if (shouldShowButton) {
-      lastUserMessage.value = inputText
+      triggeringUserMessage.value = inputText
 
       addMessage({
         sender: 'AI',
@@ -282,15 +278,22 @@ const userData = userStoredData ? JSON.parse(userStoredData) : null
 const userEmail = userData?.email
 
 const sendToAdmin = async () => {
+  if (!triggeringUserMessage.value) {
+    console.log('no message found')
+    return
+  }
+
   showUserBotChat.value = false
   const response = await axios.post('https://assitance.storehive.com.ng/public/api/chat/message', {
-    message: lastUserMessage.value,
+    message: triggeringUserMessage.value,
     website: props.website,
     conversation_id: userId + cleanWebsite,
     api: props.api,
     start_admin_chat: true,
     user_email: userEmail,
   })
+  console.log(response)
+  console.log(triggeringUserMessage.value)
   localStorage.setItem(
     'adminMode',
     JSON.stringify({
@@ -299,7 +302,6 @@ const sendToAdmin = async () => {
     }),
   )
 }
-console.log(lastUserMessage.value)
 
 onMounted(() => {
   const saved = localStorage.getItem('adminMode')
