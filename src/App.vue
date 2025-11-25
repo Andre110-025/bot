@@ -309,7 +309,7 @@ onMounted(() => {
 })
 
 onMounted(() => {
-  const userS = localStorage.getItem(`messages_${userId}`)
+  const stored = localStorage.getItem(`messages_${userId}`)
   const oneDay = 1 * 24 * 60 * 60 * 1000
 
   if (stored) {
