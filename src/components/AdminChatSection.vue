@@ -14,9 +14,9 @@ const chatMessages = ref([])
 const allChats = ref([])
 const newMessage = ref('')
 
-const stored = localStorage.getItem('chatUser')
-const data = stored ? JSON.parse(stored) : null
-const userEmail = data?.email || 'guest@example.com'
+// const stored = localStorage.getItem('chatUser')
+// const data = stored ? JSON.parse(stored) : null
+// const userEmail = data?.email || 'guest@example.com'
 
 const cleanWebsite = props.website
   .replace(/^https?:\/\//, '')
