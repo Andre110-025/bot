@@ -1,5 +1,5 @@
 <script setup>
-import { ref, nextTick, onMounted } from 'vue'
+import { ref, nextTick, onMounted, watch } from 'vue'
 import axios from 'axios'
 import getUserId from './utils/userId'
 
@@ -14,6 +14,8 @@ const loading = ref(false)
 const chatMessages = ref([])
 const allChats = ref([])
 const newMessage = ref('')
+const sessionId = ref(null)
+const isReady = ref(false)
 
 const cleanWebsite = props.website
   .replace(/^https?:\/\//, '')
@@ -28,21 +30,73 @@ const saveMessages = () => {
   }
   localStorage.setItem(`chatMessages_${props.userId}`, JSON.stringify(payload))
 }
-const sessionId = getUserId(cleanWebsite)
-console.log('admin-side:', sessionId)
+
+// Initialize sessionId with a slight delay to ensure localStorage is ready
+const initializeSessionId = () => {
+  return new Promise((resolve) => {
+    // Try multiple times with delays if needed
+    let attempts = 0
+    const maxAttempts = 5
+
+    const tryGetId = () => {
+      const id = getUserId(cleanWebsite)
+      console.log('Attempt', attempts + 1, 'Getting sessionId:', id)
+
+      if (id) {
+        sessionId.value = id
+        console.log('SessionId initialized:', sessionId.value)
+        resolve(id)
+      } else if (attempts < maxAttempts) {
+        attempts++
+        setTimeout(tryGetId, 200) // Wait 200ms before trying again
+      } else {
+        console.error('Failed to get sessionId after', maxAttempts, 'attempts')
+        resolve(null)
+      }
+    }
+
+    tryGetId()
+  })
+}
 
 const getMessage = async () => {
-  if (!cleanWebsite) return
+  if (!sessionId.value || !cleanWebsite) {
+    console.warn('Cannot fetch messages: sessionId or cleanWebsite missing')
+    return
+  }
+
   try {
     loading.value = true
+    console.log('Fetching messages for session:', sessionId.value)
+
     const response = await axios.get(
-      `https://assitance.storehive.com.ng/public/api/chat/admin/session/${sessionId}`,
+      `https://assitance.storehive.com.ng/public/api/chat/admin/session/${sessionId.value}`,
       { params: { website: props.website } },
     )
-    console.log('Session messages:', response.data.data?.messages)
-    chatMessages.value = response.data.data?.messages || []
+
+    console.log('API Response:', response.data)
+    console.log('Messages received:', response.data.data?.messages)
+
+    const messages = response.data.data?.messages || []
+
+    // Log each message to debug sender_type
+    messages.forEach((msg, index) => {
+      console.log(`Message ${index}:`, {
+        message: msg.message,
+        sender_type: msg.sender_type,
+        sender: msg.sender,
+      })
+    })
+
+    chatMessages.value = messages
+
+    await nextTick()
+    scrollToBottom()
   } catch (error) {
-    console.error('Failed to fetch all request:', error)
+    console.error('Failed to fetch messages:', error)
+    if (error.response) {
+      console.error('Error response:', error.response.data)
+    }
   } finally {
     loading.value = false
   }
@@ -55,7 +109,7 @@ const addMessage = (msg) => {
 }
 
 const sendMessage = async () => {
-  if (!newMessage.value.trim() || sending.value) return
+  if (!newMessage.value.trim() || sending.value || !sessionId.value) return
 
   const messageToSend = newMessage.value.trim()
   newMessage.value = ''
@@ -65,12 +119,14 @@ const sendMessage = async () => {
     const response = await axios.post(
       'https://assitance.storehive.com.ng/public/api/chat/admin/message',
       {
-        session_id: sessionId,
+        session_id: sessionId.value,
         message: messageToSend,
         website: props.website,
-        sender_type: 'admin', // Changed from 'user' to 'admin'
+        sender_type: 'admin',
       },
     )
+
+    console.log('Message sent:', response.data)
 
     await new Promise((resolve) => setTimeout(resolve, 500))
 
@@ -78,7 +134,10 @@ const sendMessage = async () => {
     await nextTick()
     scrollToBottom()
   } catch (err) {
-    console.error(err)
+    console.error('Failed to send message:', err)
+    if (err.response) {
+      console.error('Error response:', err.response.data)
+    }
     newMessage.value = messageToSend
   } finally {
     sending.value = false
@@ -109,28 +168,62 @@ const formatTime = (timestamp) => {
   })
 }
 
+// Helper function to determine message alignment
+const getMessageAlignment = (msg) => {
+  const senderType = msg.sender_type || msg.sender
+  console.log('Message alignment check:', { senderType, message: msg.message })
+  // User messages go right, admin messages go left
+  return senderType === 'user' ? 'right' : 'left'
+}
+
 onMounted(async () => {
+  console.log('Component mounted, initializing...')
+
+  // First, initialize the sessionId
+  await initializeSessionId()
+
+  if (!sessionId.value) {
+    console.error('Failed to initialize sessionId')
+    return
+  }
+
+  isReady.value = true
+
+  // Check localStorage for cached messages
   const stored = localStorage.getItem(`chatMessages_${props.userId}`)
   const oneDay = 1 * 24 * 60 * 60 * 1000
 
   if (stored) {
-    const data = JSON.parse(stored)
-    if (!data.timestamp || Date.now() - data.timestamp > oneDay) {
+    try {
+      const data = JSON.parse(stored)
+      if (!data.timestamp || Date.now() - data.timestamp > oneDay) {
+        console.log('Cached messages expired, removing...')
+        localStorage.removeItem(`chatMessages_${props.userId}`)
+        await getMessage()
+      } else {
+        console.log('Loading cached messages')
+        chatMessages.value = data.chatMessages
+        await nextTick()
+        scrollToBottom()
+        // Still fetch fresh data in background
+        setTimeout(() => {
+          getMessage()
+        }, 1000)
+      }
+    } catch (error) {
+      console.error('Error parsing stored messages:', error)
       localStorage.removeItem(`chatMessages_${props.userId}`)
       await getMessage()
-    } else {
-      chatMessages.value = data.chatMessages
-      await nextTick()
-      scrollToBottom()
-      setTimeout(() => {
-        getMessage()
-      }, 10000)
     }
   } else {
+    console.log('No cached messages, fetching from server...')
     await getMessage()
-    await nextTick()
-    scrollToBottom()
   }
+})
+
+// Watch for sessionId changes
+watch(sessionId, (newVal) => {
+  console.log('SessionId changed to:', newVal)
 })
 </script>
 
@@ -140,24 +233,52 @@ onMounted(async () => {
       <div class="cdUser011011-header-content">
         <div class="cdUser011011-status-indicator">
           <div class="cdUser011011-status-dot"></div>
-          <span>Admin</span>
+          <span>Admin Panel</span>
         </div>
+        <button
+          v-if="isReady"
+          @click="getMessage"
+          :disabled="loading"
+          class="cdUser011011-refresh-btn"
+        >
+          <svg
+            :class="{ 'cdUser011011-spinning': loading }"
+            xmlns="http://www.w3.org/2000/svg"
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+          >
+            <path
+              fill="currentColor"
+              d="M17.65 6.35A7.958 7.958 0 0 0 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08A5.99 5.99 0 0 1 12 18c-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"
+            />
+          </svg>
+        </button>
       </div>
     </div>
 
     <div class="cdUser011011-messages-wrapper">
-      <div ref="chatContainerRef" class="cdUser011011-messages-container">
+      <div v-if="!isReady" class="cdUser011011-loading-wrapper">
+        <div class="cdUser011011-loader"></div>
+        <p class="cdUser011011-loading-text">Initializing chat...</p>
+      </div>
+
+      <div v-else ref="chatContainerRef" class="cdUser011011-messages-container">
         <div
           v-for="(msg, i) in chatMessages"
           :key="i"
           class="cdUser011011-message-row"
-          :class="msg.sender_type || msg.sender"
+          :class="getMessageAlignment(msg)"
         >
           <div class="cdUser011011-message-content">
             <div class="cdUser011011-bubble-wrapper">
               <div
                 class="cdUser011011-message-bubble"
-                :class="`cdUser011011-bubble-${msg.sender_type || msg.sender}`"
+                :class="[
+                  getMessageAlignment(msg) === 'right'
+                    ? 'cdUser011011-bubble-user'
+                    : 'cdUser011011-bubble-admin',
+                ]"
               >
                 <p class="cdUser011011-message-text">{{ msg.message }}</p>
               </div>
@@ -165,7 +286,7 @@ onMounted(async () => {
             </div>
           </div>
         </div>
-        <div v-if="chatMessages.length === 0" class="cdUser011011-empty-state">
+        <div v-if="chatMessages.length === 0 && !loading" class="cdUser011011-empty-state">
           <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24">
             <path
               fill="currentColor"
@@ -185,13 +306,13 @@ onMounted(async () => {
           @keyup.enter="sendMessage"
           type="text"
           placeholder="Type your message..."
-          :disabled="sending"
+          :disabled="sending || !isReady"
           class="cdUser011011-message-input"
         />
         <button
           @click="sendMessage"
           class="cdUser011011-send-btn"
-          :disabled="!newMessage.trim() || sending"
+          :disabled="!newMessage.trim() || sending || !isReady"
         >
           <svg
             v-if="!sending"
@@ -410,11 +531,13 @@ onMounted(async () => {
   }
 }
 
-.cdUser011011-message-row.admin {
+/* LEFT alignment for admin messages */
+.cdUser011011-message-row.left {
   justify-content: flex-start;
 }
 
-.cdUser011011-message-row.user {
+/* RIGHT alignment for user messages */
+.cdUser011011-message-row.right {
   justify-content: flex-end;
 }
 
@@ -426,30 +549,8 @@ onMounted(async () => {
   margin: 0;
 }
 
-.cdUser011011-message-row.user .cdUser011011-message-content {
+.cdUser011011-message-row.right .cdUser011011-message-content {
   flex-direction: row-reverse;
-}
-
-.cdUser011011-avatar {
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  margin: 0;
-}
-
-.cdUser011011-avatar-admin {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-}
-
-.cdUser011011-avatar-user {
-  background: linear-gradient(135deg, #009970 0%, #00b383 100%);
-  color: white;
 }
 
 .cdUser011011-bubble-wrapper {
@@ -459,7 +560,7 @@ onMounted(async () => {
   margin: 0;
 }
 
-.cdUser011011-message-row.user .cdUser011011-bubble-wrapper {
+.cdUser011011-message-row.right .cdUser011011-bubble-wrapper {
   align-items: flex-end;
 }
 
@@ -474,12 +575,14 @@ onMounted(async () => {
   margin: 0;
 }
 
+/* Admin messages - white background, left side */
 .cdUser011011-bubble-admin {
   background: #ffffff;
   color: #1f2937;
   border-bottom-left-radius: 4px;
 }
 
+/* User messages - green gradient, right side */
 .cdUser011011-bubble-user {
   background: linear-gradient(135deg, #009970 0%, #00b383 100%);
   color: #ffffff;
