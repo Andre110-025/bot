@@ -29,6 +29,7 @@ const saveMessages = () => {
   localStorage.setItem(`chatMessages_${props.userId}`, JSON.stringify(payload))
 }
 const session_Id = getUserId(cleanWebsite)
+console.log('admin-side:', session_Id)
 const sessionId = session_Id + cleanWebsite
 
 // const storedConversationId = localStorage.getItem('chat_user_id')
