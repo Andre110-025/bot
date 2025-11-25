@@ -60,9 +60,9 @@ const getMessage = async () => {
   }
 }
 
-onMounted(() => {
-  getMessage()
-})
+// onMounted(() => {
+//   getMessage()
+// })
 
 const sendMessage = async () => {
   if (!newMessage.value.trim() || sending.value) return
