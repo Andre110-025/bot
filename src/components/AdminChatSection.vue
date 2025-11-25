@@ -1,7 +1,7 @@
 <script setup>
 import { ref, nextTick, onMounted } from 'vue'
 import axios from 'axios'
-// import getUserId from './utils/userId'
+import getUserId from './utils/userId'
 
 const props = defineProps({
   userId: { type: String, required: true },
