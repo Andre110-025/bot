@@ -34,16 +34,20 @@ const props = defineProps({
 })
 
 const userId = ref(localStorage.getItem('userId') || '')
-const cleanWebsite = props.website
-  .replace(/^https?:\/\//, '')
-  .replace(/^www\./, '')
-  .split('/')[0]
 
 onMounted(() => {
+  const cleanWebsite = props.website
+    .replace(/^https?:\/\//, '')
+    .replace(/^www\./, '')
+    .split('/')[0]
+
+  console.log('Clean Website:', cleanWebsite) // <--- check the cleaned website
+
   if (!userId.value) {
-    userId.value = getUserId(cleanWebsite) // pass the website prop
+    userId.value = getUserId(cleanWebsite) // generate ID using clean website
     localStorage.setItem('userId', userId.value)
   }
+
   console.log('UserID:', userId.value)
 })
 

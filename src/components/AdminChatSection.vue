@@ -1,7 +1,7 @@
 <script setup>
 import { ref, nextTick, onMounted } from 'vue'
 import axios from 'axios'
-import getUserId from './utils/userId'
+// import getUserId from './utils/userId'
 
 const props = defineProps({
   userId: { type: String, required: true },
@@ -50,7 +50,7 @@ const getMessage = async () => {
         website: props.website,
       },
     )
-    console.log('Session messages:', response)
+    console.log('Session messages:', sessionId)
     // console.log(userConverasationId, website)
     chatMessages.value = response.data.data || []
   } catch (error) {
