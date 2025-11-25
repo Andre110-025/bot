@@ -1,5 +1,5 @@
 // utils/userId.js
-function getUserId(website) {
+function getUserId(website = '') {
   const cleanWebsite = website.replace(/[^a-zA-Z0-9]/g, '')
   let id = localStorage.getItem('chat_user_id')
 
@@ -7,9 +7,9 @@ function getUserId(website) {
     const uuid = crypto.randomUUID()
     id = `${uuid}_${cleanWebsite}`
     localStorage.setItem('chat_user_id', id)
-    console.log('[UserID Created]:', id) // <-- log when created
+    console.log('[UserID Created]:', id)
   } else {
-    console.log('[UserID Loaded from Storage]:', id) // <-- log if already exists
+    console.log('[UserID Loaded from Storage]:', id)
   }
 
   return id
