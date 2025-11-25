@@ -275,13 +275,26 @@ const handleAdminRedirect = () => {
 
 const sendToAdmin = () => {
   showUserBotChat.value = false
+  localStorage.setItem(
+    'adminMode',
+    JSON.stringify({
+      active: true,
+      expiresAt: Date.now() + 24 * 60 * 60 * 1000,
+    }),
+  )
 }
 
-// onMounted(() => {
-//   // restore messages
-//   const storedMessages = localStorage.getItem(`messages_${userId}`)
-//   if (storedMessages) messages.value = JSON.parse(storedMessages)
-// })
+onMounted(() => {
+  const saved = localStorage.getItem('adminMode')
+  if (saved) {
+    const data = JSON.parse(saved)
+    if (Date.now() < data.expiresAt) {
+      showUserBotChat.value = false
+    } else {
+      localStorage.removeItem('adminMode')
+    }
+  }
+})
 
 onMounted(() => {
   const stored = localStorage.getItem(`messages_${userId}`)
