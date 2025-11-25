@@ -1,5 +1,5 @@
 <script setup>
-import { ref, nextTick, onMounted } from 'vue'
+import { ref, onMounted, nextTick } from 'vue'
 import axios from 'axios'
 import getUserId from './utils/userId'
 
@@ -9,10 +9,10 @@ const props = defineProps({
   website: { type: String, required: true },
 })
 
-const sending = ref(false)
-const loading = ref(false)
+const sessionId = ref(null) // ← Reactive session ID
 const chatMessages = ref([])
-const allChats = ref([])
+const loading = ref(true)
+const sending = ref(false)
 const newMessage = ref('')
 
 const cleanWebsite = props.website
@@ -20,117 +20,96 @@ const cleanWebsite = props.website
   .replace(/^www\./, '')
   .split('/')[0]
 
-const saveMessages = () => {
-  if (!props.userId) return
-  const payload = {
-    timestamp: Date.now(),
-    chatMessages: chatMessages.value,
+// Step 1: Load sessionId (supports async getUserId)
+const loadSessionId = async () => {
+  try {
+    const id = await getUserId(cleanWebsite)
+    sessionId.value = id
+    console.log('Session ID loaded:', id)
+  } catch (err) {
+    console.error('Failed to load session ID:', err)
   }
-  localStorage.setItem(`chatMessages_${props.userId}`, JSON.stringify(payload))
 }
-const sessionId = getUserId(cleanWebsite)
-console.log('admin-side:', sessionId)
-// const sessionId = session_Id + cleanWebsite
 
-// const storedConversationId = localStorage.getItem('chat_user_id')
-// const conversationId = storedConversationId
-// const sessionId = conversationId
-
-const getMessage = async () => {
-  if (!cleanWebsite || !sessionId) {
-    console.warn('Skipping message fetch: Missing website or sessionId')
+// Step 2: Fetch previous messages from backend
+const getMessages = async () => {
+  if (!sessionId.value) {
+    console.log('Waiting for sessionId...')
     return
   }
+
   try {
     loading.value = true
     const response = await axios.get(
-      `https://assitance.storehive.com.ng/public/api/chat/admin/session/${sessionId}`,
+      `https://assitance.storehive.com.ng/public/api/chat/admin/session/${sessionId.value}`,
       { params: { website: props.website } },
     )
-    console.log('Session messages:', sessionId)
-    // console.log(userConverasationId, website)
-    chatMessages.value = response.data.data?.messages || []
+
+    const messages = response.data.data?.messages || []
+    chatMessages.value = messages.map((msg) => ({
+      ...msg,
+      sender: msg.sender_type === 'admin' ? 'admin' : 'user', // ← Normalize sender
+    }))
   } catch (error) {
-    console.error('Failed to fetch all request:', error)
+    console.error('Failed to fetch messages:', error)
+    if (error.response?.status === 404) {
+      chatMessages.value = [] // New session = empty chat
+    }
   } finally {
     loading.value = false
   }
 }
 
-// onMounted(() => {
-//   getMessage()
-// })
-
-// onMounted(async () => {
-//   const stored = localStorage.getItem(`chatMessages_${props.userId}`);
-//   const oneDay = 1 * 24 * 60 * 60 * 1000;
-
-//   if (stored) {
-//     const data = JSON.parse(stored);
-//     if (!data.timestamp || Date.now() - data.timestamp > oneDay) {
-//       localStorage.removeItem(`chatMessages_${props.userId}`);
-//       await getMessage(); // fetch from backend if no valid stored data
-//     } else {
-//       chatMessages.value = data.chatMessages;
-//       await nextTick();
-//       scrollToBottom();
-//       // optionally refresh from server anyway
-//       getMessage();
-//     }
-//   } else {
-//     await getMessage(); // no local storage, fetch previous messages
-//     await nextTick();
-//     scrollToBottom();
-//   }
-// });
-
-const addMessage = (msg) => {
-  chatMessages.value.push(msg)
-  saveMessages()
-  nextTick().then(scrollToBottom)
-}
-
+// Send message as ADMIN
 const sendMessage = async () => {
-  if (!newMessage.value.trim() || sending.value) return
+  if (!newMessage.value.trim() || sending.value || !sessionId.value) return
 
-  const messageToSend = newMessage.value.trim()
-  newMessage.value = '' // Clear input immediately
+  const messageText = newMessage.value.trim()
+  newMessage.value = ''
+
+  // Optimistic UI
+  const tempMessage = {
+    message: messageText,
+    sender: 'admin',
+    timestamp: new Date().toISOString(),
+    temp: true,
+  }
+  chatMessages.value.push(tempMessage)
 
   try {
     sending.value = true
-    const response = await axios.post(
-      'https://assitance.storehive.com.ng/public/api/chat/admin/message',
-      {
-        session_id: sessionId,
-        message: messageToSend,
-        website: props.website,
-        sender_type: 'user',
-      },
-    )
+    await axios.post('https://assitance.storehive.com.ng/public/api/chat/admin/message', {
+      session_id: sessionId.value,
+      message: messageText,
+      website: props.website,
+      sender_type: 'admin', // ← THIS WAS THE ALIGNMENT BUG!
+    })
 
-    await new Promise((resolve) => setTimeout(resolve, 500))
-
-    await getMessage()
+    // Refresh messages from server
+    await getMessages()
     await nextTick()
     scrollToBottom()
   } catch (err) {
-    console.error(err)
-    newMessage.value = messageToSend // Restore message on error
+    console.error('Send failed:', err)
+    // Remove optimistic message
+    chatMessages.value = chatMessages.value.filter((m) => !m.temp)
+    newMessage.value = messageText
   } finally {
     sending.value = false
   }
 }
 
+// Scroll to bottom
 const chatContainerRef = ref(null)
 const scrollToBottom = () => {
-  if (chatContainerRef.value) {
-    chatContainerRef.value.scrollTo({
-      top: chatContainerRef.value.scrollHeight,
-      behavior: 'smooth',
-    })
-  }
+  nextTick(() => {
+    if (chatContainerRef.value) {
+      chatContainerRef.value.scrollTop = chatContainerRef.value.scrollHeight
+    }
+  })
 }
 
+// Format time
 const formatTime = (timestamp) => {
   const date = new Date(timestamp)
   const now = new Date()
@@ -145,54 +124,11 @@ const formatTime = (timestamp) => {
   })
 }
 
-// onMounted(async () => {
-//   const stored = localStorage.getItem(`chatMessages_${props.userId}`)
-//   const oneDay = 1 * 24 * 60 * 60 * 1000
-
-//   if (stored) {
-//     const data = JSON.parse(stored)
-//     if (!data.timestamp || Date.now() - data.timestamp > oneDay) {
-//       localStorage.removeItem(`chatMessages_${props.userId}`)
-//       await getMessage() // fetch from backend
-//     } else {
-//       chatMessages.value = data.chatMessages
-//       await nextTick()
-//       scrollToBottom()
-//       setTimeout(() => {
-//         getMessage()
-//       }, 10000)
-//     }
-//   } else {
-//     await getMessage() // no stored data
-//     await nextTick()
-//     scrollToBottom()
-//   }
-// })
-
+// ON MOUNT: Load session → load messages
 onMounted(async () => {
-  // Check if sessionId is available *before* attempting fetch logic
-  if (!sessionId) {
-    console.error('FATAL: sessionId not available on mount. Cannot fetch messages.')
-    return
-  }
-
-  const stored = localStorage.getItem(`chatMessages_${props.userId}`)
-  const oneDay = 1 * 24 * 60 * 60 * 1000
-
-  if (stored) {
-    const data = JSON.parse(stored)
-    if (!data.timestamp || Date.now() - data.timestamp > oneDay) {
-      localStorage.removeItem(`chatMessages_${props.userId}`)
-      await getMessage() // fetch from backend if local data is expired
-    } else {
-      chatMessages.value = data.chatMessages
-      await nextTick()
-      scrollToBottom() // Optionally refresh from server anyway after showing local data
-      // Remove the setTimeout wrapper unless you specifically need a delayed refresh.
-      getMessage()
-    }
-  } else {
-    await getMessage() // no stored data, fetch previous messages
+  await loadSessionId()
+  if (sessionId.value) {
+    await getMessages()
     await nextTick()
     scrollToBottom()
   }
@@ -201,17 +137,26 @@ onMounted(async () => {
 
 <template>
   <div class="cdUser011011-chat-container">
+    <!-- Header -->
     <div class="cdUser011011-chat-header">
       <div class="cdUser011011-header-content">
         <div class="cdUser011011-status-indicator">
           <div class="cdUser011011-status-dot"></div>
-          <span>Admin</span>
+          <span>Admin Chat</span>
         </div>
       </div>
     </div>
 
+    <!-- Messages Area -->
     <div class="cdUser011011-messages-wrapper">
       <div ref="chatContainerRef" class="cdUser011011-messages-container">
+        <!-- Loading State -->
+        <div v-if="loading" class="cdUser011011-loading-wrapper">
+          <div class="cdUser011011-loader"></div>
+          <p class="cdUser011011-loading-text">Loading messages...</p>
+        </div>
+
+        <!-- Messages -->
         <div
           v-for="(msg, i) in chatMessages"
           :key="i"
@@ -223,11 +168,15 @@ onMounted(async () => {
               <div class="cdUser011011-message-bubble" :class="`cdUser011011-bubble-${msg.sender}`">
                 <p class="cdUser011011-message-text">{{ msg.message }}</p>
               </div>
-              <span class="cdUser011011-message-time">{{ formatTime(msg.timestamp) }}</span>
+              <span class="cdUser011011-message-time">
+                {{ formatTime(msg.timestamp) }}
+              </span>
             </div>
           </div>
         </div>
-        <div v-if="chatMessages.length === 0" class="cdUser011011-empty-state">
+
+        <!-- Empty State -->
+        <div v-if="!loading && chatMessages.length === 0" class="cdUser011011-empty-state">
           <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24">
             <path
               fill="currentColor"
@@ -235,25 +184,26 @@ onMounted(async () => {
             />
           </svg>
           <p>No messages yet</p>
-          <span>Start a conversation below</span>
+          <span>Start replying to this user</span>
         </div>
       </div>
     </div>
 
+    <!-- Input -->
     <div class="cdUser011011-input-wrapper">
       <div class="cdUser011011-input-container">
         <input
           v-model="newMessage"
           @keyup.enter="sendMessage"
           type="text"
-          placeholder="Type your message..."
-          :disabled="sending"
+          placeholder="Type your reply..."
+          :disabled="sending || !sessionId"
           class="cdUser011011-message-input"
         />
         <button
           @click="sendMessage"
+          :disabled="!newMessage.trim() || sending || !sessionId"
           class="cdUser011011-send-btn"
-          :disabled="!newMessage.trim() || sending"
         >
           <svg
             v-if="!sending"

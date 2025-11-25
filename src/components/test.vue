@@ -54,9 +54,9 @@ const getMessage = async () => {
   }
 }
 
-// onMounted(() => {
-//   getMessage()
-// })
+onMounted(() => {
+  getMessage()
+})
 
 // onMounted(async () => {
 //   const stored = localStorage.getItem(`chatMessages_${props.userId}`);
