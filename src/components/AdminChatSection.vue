@@ -37,7 +37,10 @@ console.log('admin-side:', sessionId)
 // const sessionId = conversationId
 
 const getMessage = async () => {
-  if (!cleanWebsite) return
+  if (!cleanWebsite || !sessionId) {
+    console.warn('Skipping message fetch: Missing website or sessionId')
+    return
+  }
   try {
     loading.value = true
     const response = await axios.get(
@@ -54,9 +57,9 @@ const getMessage = async () => {
   }
 }
 
-onMounted(() => {
-  getMessage()
-})
+// onMounted(() => {
+//   getMessage()
+// })
 
 // onMounted(async () => {
 //   const stored = localStorage.getItem(`chatMessages_${props.userId}`);
@@ -107,7 +110,7 @@ const sendMessage = async () => {
 
     await new Promise((resolve) => setTimeout(resolve, 500))
 
-    // await getMessage()
+    await getMessage()
     await nextTick()
     scrollToBottom()
   } catch (err) {
@@ -142,7 +145,37 @@ const formatTime = (timestamp) => {
   })
 }
 
+// onMounted(async () => {
+//   const stored = localStorage.getItem(`chatMessages_${props.userId}`)
+//   const oneDay = 1 * 24 * 60 * 60 * 1000
+
+//   if (stored) {
+//     const data = JSON.parse(stored)
+//     if (!data.timestamp || Date.now() - data.timestamp > oneDay) {
+//       localStorage.removeItem(`chatMessages_${props.userId}`)
+//       await getMessage() // fetch from backend
+//     } else {
+//       chatMessages.value = data.chatMessages
+//       await nextTick()
+//       scrollToBottom()
+//       setTimeout(() => {
+//         getMessage()
+//       }, 10000)
+//     }
+//   } else {
+//     await getMessage() // no stored data
+//     await nextTick()
+//     scrollToBottom()
+//   }
+// })
+
 onMounted(async () => {
+  // Check if sessionId is available *before* attempting fetch logic
+  if (!sessionId) {
+    console.error('FATAL: sessionId not available on mount. Cannot fetch messages.')
+    return
+  }
+
   const stored = localStorage.getItem(`chatMessages_${props.userId}`)
   const oneDay = 1 * 24 * 60 * 60 * 1000
 
@@ -150,17 +183,16 @@ onMounted(async () => {
     const data = JSON.parse(stored)
     if (!data.timestamp || Date.now() - data.timestamp > oneDay) {
       localStorage.removeItem(`chatMessages_${props.userId}`)
-      await getMessage() // fetch from backend
+      await getMessage() // fetch from backend if local data is expired
     } else {
       chatMessages.value = data.chatMessages
       await nextTick()
-      scrollToBottom()
-      // setTimeout(() => {
-      //   getMessage()
-      // }, 10000)
+      scrollToBottom() // Optionally refresh from server anyway after showing local data
+      // Remove the setTimeout wrapper unless you specifically need a delayed refresh.
+      getMessage()
     }
   } else {
-    // await getMessage() // no stored data
+    await getMessage() // no stored data, fetch previous messages
     await nextTick()
     scrollToBottom()
   }
