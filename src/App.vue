@@ -273,8 +273,20 @@ const handleAdminRedirect = () => {
   showUserBotChat.value = false
 }
 
-const sendToAdmin = () => {
+const userStoredData = localStorage.getItem('chatUser')
+const userData = userStoredData ? JSON.parse(userStoredData) : null
+const userEmail = userData?.email
+
+const sendToAdmin = async () => {
   showUserBotChat.value = false
+  const response = await axios.post('https://assitance.storehive.com.ng/public/api/chat/message', {
+    message: lastUserMessage.value,
+    website: props.website,
+    conversation_id: userId + cleanWebsite,
+    api: props.api,
+    start_admin_chat: true,
+    user_email: userEmail,
+  })
   localStorage.setItem(
     'adminMode',
     JSON.stringify({
@@ -297,7 +309,7 @@ onMounted(() => {
 })
 
 onMounted(() => {
-  const stored = localStorage.getItem(`messages_${userId}`)
+  const userS = localStorage.getItem(`messages_${userId}`)
   const oneDay = 1 * 24 * 60 * 60 * 1000
 
   if (stored) {

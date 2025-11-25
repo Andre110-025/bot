@@ -1,5 +1,5 @@
 <script setup>
-import { ref, nextTick } from 'vue'
+import { ref, nextTick, onMounted } from 'vue'
 import axios from 'axios'
 
 const props = defineProps({
@@ -9,7 +9,9 @@ const props = defineProps({
 })
 
 const sending = ref(false)
+const loading = ref(false)
 const chatMessages = ref([])
+const allChats = ref([])
 const newMessage = ref('')
 
 const stored = localStorage.getItem('chatUser')
@@ -21,6 +23,45 @@ const cleanWebsite = props.website
   .replace(/^www\./, '')
   .split('/')[0]
 
+const saveMessages = () => {
+  if (!props.userId) return
+  const payload = {
+    timestamp: Date.now(),
+    chatMessages: chatMessages.value,
+  }
+  localStorage.setItem(`chatMessages_${props.userId}`, JSON.stringify(payload))
+}
+
+const addMessage = (msg) => {
+  message.value.push(msg)
+  saveMessages()
+}
+
+const userConverasationId = props.userId + cleanWebsite
+
+const getMessage = async () => {
+  if (!props.website) return
+  try {
+    loading.value = true
+    const response = await axios.get(
+      `https://assitance.storehive.com.ng/public/api/chat/admin/session/${userConverasationId}`,
+      {
+        website: props.website,
+      },
+    )
+    console.log(response)
+    allChats.value = response.data.data || []
+  } catch (error) {
+    console.error('Failed to fetch all request:', error)
+  } finally {
+    loading.value = false
+  }
+}
+
+onMounted(() => {
+  getMessage()
+})
+
 const sendMessage = async () => {
   if (!newMessage.value.trim() || sending.value) return
 
@@ -28,7 +69,7 @@ const sendMessage = async () => {
   newMessage.value = ''
 
   // Add message locally for instant feedback
-  chatMessages.value.push({
+  addMessage({
     sender: 'user',
     text: messageToSend,
     timestamp: Date.now(),
@@ -38,18 +79,19 @@ const sendMessage = async () => {
 
   try {
     sending.value = true
-    await axios.post('https://assitance.storehive.com.ng/public/api/chat/message', {
-      conversation_id: props.userId + cleanWebsite,
-      message: messageToSend,
-      website: props.website,
-      api: props.api,
-      user_email: userEmail,
-      start_admin_chat: true,
-    })
+    const response = await axios.post(
+      'https://assitance.storehive.com.ng/public/api/chat/admin/message',
+      {
+        session_id: userConverasationId,
+        message: messageToSend,
+        website: props.website,
+        sender_type: 'user',
+      },
+    )
   } catch (err) {
     console.error(err)
     // On error, show message again
-    chatMessages.value.push({
+    addMessage({
       sender: 'user',
       text: messageToSend,
       timestamp: Date.now(),
@@ -82,6 +124,20 @@ const formatTime = (timestamp) => {
     minute: '2-digit',
   })
 }
+
+onMounted(() => {
+  const stored = localStorage.getItem(`chatMessages_${props.userId}`)
+  const oneDay = 1 * 24 * 60 * 60 * 1000
+
+  if (stored) {
+    const data = JSON.parse(stored)
+    if (!data.timestamp || Date.now() - data.timestamp > oneDay) {
+      localStorage.removeItem(`chatMessages_${props.userId}`)
+    } else {
+      chatMessages.value = data.chatMessages
+    }
+  }
+})
 </script>
 
 <template>
