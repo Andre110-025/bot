@@ -50,7 +50,7 @@ const getMessage = async () => {
       },
     )
     console.log(response)
-    allChats.value = response.data.data || []
+    chatMessages.value = response.data.data || []
   } catch (error) {
     console.error('Failed to fetch all request:', error)
   } finally {
@@ -66,7 +66,6 @@ const sendMessage = async () => {
   if (!newMessage.value.trim() || sending.value) return
 
   const messageToSend = newMessage.value.trim()
-  newMessage.value = ''
 
   // Add message locally for instant feedback
   addMessage({
@@ -88,6 +87,9 @@ const sendMessage = async () => {
         sender_type: 'user',
       },
     )
+    console.log(response)
+    newMessage.value = ''
+    await getMessage()
   } catch (err) {
     console.error(err)
     // On error, show message again
