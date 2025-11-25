@@ -38,6 +38,8 @@ if (!userId) {
   localStorage.setItem('userId', userId)
 }
 
+const sessionId = getUserId(props.website)
+
 const togglePopup = () => {
   showPopup.value = !showPopup.value
 }
@@ -222,14 +224,13 @@ async function getGeminiResponse(userText) {
       {
         message: userText,
         website: props.website,
-        conversation_id: userId + cleanWebsite,
+        conversation_id: sessionId,
         api: props.api,
         start_admin_chat: false,
         // user_email: null,
       },
     )
-    // console.log(response)
-    localStorage.setItem('chat_user_id', userId + cleanWebsite)
+    console.log('[Gemini Response conversation_id]:', sessionId)
     return response.data.data.response
   } catch (err) {
     console.error('Error calling Gemini API:', err)
@@ -278,6 +279,10 @@ const userStoredData = localStorage.getItem('chatUser')
 const userData = userStoredData ? JSON.parse(userStoredData) : null
 const userEmail = userData?.email
 
+// const storedConversationId = localStorage.getItem('chat_user_id')
+// const conversationId = storedConversationId
+// const sessionId = conversationId
+
 const sendToAdmin = async (userMessage = '') => {
   let messageToSend = userMessage.trim()
 
@@ -286,10 +291,11 @@ const sendToAdmin = async (userMessage = '') => {
   }
 
   showUserBotChat.value = false
+  console.log('[Sending to Admin] conversation_id:', sessionId)
   const response = await axios.post('https://assitance.storehive.com.ng/public/api/chat/message', {
     message: messageToSend,
     website: props.website,
-    conversation_id: userId + cleanWebsite,
+    conversation_id: sessionId,
     api: props.api,
     start_admin_chat: true,
     user_email: userEmail,

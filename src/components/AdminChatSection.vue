@@ -1,6 +1,7 @@
 <script setup>
 import { ref, nextTick, onMounted } from 'vue'
 import axios from 'axios'
+import getUserId from './utils/userId'
 
 const props = defineProps({
   userId: { type: String, required: true },
@@ -32,10 +33,11 @@ const addMessage = (msg) => {
   message.value.push(msg)
   saveMessages()
 }
+const sessionId = getUserId(props.website)
 
-const storedConversationId = localStorage.getItem('chat_user_id')
-const conversationId = storedConversationId
-const sessionId = conversationId
+// const storedConversationId = localStorage.getItem('chat_user_id')
+// const conversationId = storedConversationId
+// const sessionId = conversationId
 
 const getMessage = async () => {
   if (!props.website) return
