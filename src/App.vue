@@ -286,7 +286,7 @@ const handleAdminRedirect = () => {
 
 const userStoredData = localStorage.getItem('chatUser')
 const userData = userStoredData ? JSON.parse(userStoredData) : null
-const userEmail = userData.email
+const userEmail = userData?.email || ''
 
 // const storedConversationId = localStorage.getItem('chat_user_id')
 // const conversationId = storedConversationId
