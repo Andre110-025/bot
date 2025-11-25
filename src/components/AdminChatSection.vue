@@ -107,7 +107,7 @@ const sendMessage = async () => {
 
     await new Promise((resolve) => setTimeout(resolve, 500))
 
-    await getMessage()
+    // await getMessage()
     await nextTick()
     scrollToBottom()
   } catch (err) {
@@ -155,12 +155,12 @@ onMounted(async () => {
       chatMessages.value = data.chatMessages
       await nextTick()
       scrollToBottom()
-      setTimeout(() => {
-        getMessage()
-      }, 10000)
+      // setTimeout(() => {
+      //   getMessage()
+      // }, 10000)
     }
   } else {
-    await getMessage() // no stored data
+    // await getMessage() // no stored data
     await nextTick()
     scrollToBottom()
   }
