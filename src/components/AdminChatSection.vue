@@ -33,7 +33,8 @@ const addMessage = (msg) => {
   message.value.push(msg)
   saveMessages()
 }
-const sessionId = getUserId(props.website)
+const session_Id = getUserId(props.website)
+const sessionId = session_Id + props.website
 
 // const storedConversationId = localStorage.getItem('chat_user_id')
 // const conversationId = storedConversationId

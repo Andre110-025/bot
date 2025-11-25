@@ -224,7 +224,7 @@ async function getGeminiResponse(userText) {
       {
         message: userText,
         website: props.website,
-        conversation_id: sessionId,
+        conversation_id: sessionId + props.website,
         api: props.api,
         start_admin_chat: false,
         // user_email: null,
@@ -295,7 +295,7 @@ const sendToAdmin = async (userMessage = '') => {
   const response = await axios.post('https://assitance.storehive.com.ng/public/api/chat/message', {
     message: messageToSend,
     website: props.website,
-    conversation_id: sessionId,
+    conversation_id: sessionId + props.website,
     api: props.api,
     start_admin_chat: true,
     user_email: userEmail,
