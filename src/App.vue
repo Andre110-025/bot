@@ -183,11 +183,12 @@ const getResponse = async (inputText) => {
     const shouldShowButton = terms.some((term) => reply.toLowerCase().includes(term.toLowerCase()))
 
     if (shouldShowButton) {
-      triggeringUserMessage.value = inputText
+      // triggeringUserMessage.value = inputText
 
       addMessage({
         sender: 'AI',
         isButton: true,
+        triggeringMessage: inputText,
       })
 
       scrollToBottom()
@@ -277,15 +278,16 @@ const userStoredData = localStorage.getItem('chatUser')
 const userData = userStoredData ? JSON.parse(userStoredData) : null
 const userEmail = userData?.email
 
-const sendToAdmin = async () => {
-  if (!triggeringUserMessage.value) {
-    console.log('no message found')
-    return
+const sendToAdmin = async (userMessage = '') => {
+  let messageToSend = userMessage.trim()
+
+  if (!messageToSend) {
+    messageToSend = 'User requested to speak with a representative.'
   }
 
   showUserBotChat.value = false
   const response = await axios.post('https://assitance.storehive.com.ng/public/api/chat/message', {
-    message: triggeringUserMessage.value,
+    message: messageToSend,
     website: props.website,
     conversation_id: userId + cleanWebsite,
     api: props.api,
@@ -432,7 +434,10 @@ onBeforeUnmount(() => {
                     </div>
 
                     <div v-else class="cdUser011011-message bot">
-                      <button class="cdUser011011-fallback-btn" @click="sendToAdmin">
+                      <button
+                        class="cdUser011011-fallback-btn"
+                        @click="sendToAdmin(msg.triggeringMessage)"
+                      >
                         Chat with a representative
                       </button>
                     </div>
