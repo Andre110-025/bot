@@ -1,5 +1,5 @@
 <script setup>
-import { ref, nextTick, onMounted } from 'vue'
+import { ref, nextTick, onMounted, watch } from 'vue'
 import axios from 'axios'
 import getUserId from './utils/userId'
 
@@ -14,6 +14,7 @@ const loading = ref(false)
 const chatMessages = ref([])
 const allChats = ref([])
 const newMessage = ref('')
+const sessionId = ref(null) // Make it reactive
 
 const cleanWebsite = props.website
   .replace(/^https?:\/\//, '')
@@ -28,58 +29,83 @@ const saveMessages = () => {
   }
   localStorage.setItem(`chatMessages_${props.userId}`, JSON.stringify(payload))
 }
-const sessionId = getUserId(cleanWebsite)
-console.log('admin-side:', sessionId)
-// const sessionId = session_Id + cleanWebsite
 
-// const storedConversationId = localStorage.getItem('chat_user_id')
-// const conversationId = storedConversationId
-// const sessionId = conversationId
+// Initialize sessionId reactively
+const initializeSession = () => {
+  sessionId.value = getUserId(cleanWebsite)
+  console.log('admin-side sessionId:', sessionId.value)
+}
 
 const getMessage = async () => {
-  if (!cleanWebsite) return
+  // Wait until sessionId is available
+  if (!sessionId.value || !cleanWebsite) {
+    console.log('Waiting for sessionId...')
+    return
+  }
+
   try {
     loading.value = true
+    console.log('Fetching messages for session:', sessionId.value)
+
     const response = await axios.get(
-      `https://assitance.storehive.com.ng/public/api/chat/admin/session/${sessionId}`,
+      `https://assitance.storehive.com.ng/public/api/chat/admin/session/${sessionId.value}`,
       { params: { website: props.website } },
     )
-    console.log('Session messages:', sessionId)
-    // console.log(userConverasationId, website)
+
+    console.log('Session messages response:', response.data)
     chatMessages.value = response.data.data?.messages || []
+
+    // Save to localStorage after successful fetch
+    saveMessages()
   } catch (error) {
-    console.error('Failed to fetch all request:', error)
+    console.error('Failed to fetch messages:', error)
+    // If session doesn't exist, you might want to create a new one
+    if (error.response?.status === 404) {
+      console.log('Session not found, might need to create new session')
+      chatMessages.value = [] // Clear any stale messages
+    }
   } finally {
     loading.value = false
   }
 }
 
-onMounted(() => {
-  getMessage()
+// Watch for sessionId changes and load messages
+watch(sessionId, (newSessionId) => {
+  if (newSessionId) {
+    console.log('SessionId changed, loading messages:', newSessionId)
+    getMessage()
+  }
 })
 
-// onMounted(async () => {
-//   const stored = localStorage.getItem(`chatMessages_${props.userId}`);
-//   const oneDay = 1 * 24 * 60 * 60 * 1000;
+onMounted(async () => {
+  // Initialize session first
+  initializeSession()
 
-//   if (stored) {
-//     const data = JSON.parse(stored);
-//     if (!data.timestamp || Date.now() - data.timestamp > oneDay) {
-//       localStorage.removeItem(`chatMessages_${props.userId}`);
-//       await getMessage(); // fetch from backend if no valid stored data
-//     } else {
-//       chatMessages.value = data.chatMessages;
-//       await nextTick();
-//       scrollToBottom();
-//       // optionally refresh from server anyway
-//       getMessage();
-//     }
-//   } else {
-//     await getMessage(); // no local storage, fetch previous messages
-//     await nextTick();
-//     scrollToBottom();
-//   }
-// });
+  const stored = localStorage.getItem(`chatMessages_${props.userId}`)
+  const oneDay = 1 * 24 * 60 * 60 * 1000
+
+  if (stored) {
+    const data = JSON.parse(stored)
+    if (!data.timestamp || Date.now() - data.timestamp > oneDay) {
+      localStorage.removeItem(`chatMessages_${props.userId}`)
+      // getMessage() will be called by the watcher when sessionId is set
+    } else {
+      chatMessages.value = data.chatMessages
+      await nextTick()
+      scrollToBottom()
+      // Refresh from server after a delay
+      setTimeout(() => {
+        if (sessionId.value) {
+          getMessage()
+        }
+      }, 1000)
+    }
+  } else {
+    // getMessage() will be called by the watcher when sessionId is set
+    await nextTick()
+    scrollToBottom()
+  }
+})
 
 const addMessage = (msg) => {
   chatMessages.value.push(msg)
@@ -88,7 +114,7 @@ const addMessage = (msg) => {
 }
 
 const sendMessage = async () => {
-  if (!newMessage.value.trim() || sending.value) return
+  if (!newMessage.value.trim() || sending.value || !sessionId.value) return
 
   const messageToSend = newMessage.value.trim()
   newMessage.value = '' // Clear input immediately
@@ -98,20 +124,22 @@ const sendMessage = async () => {
     const response = await axios.post(
       'https://assitance.storehive.com.ng/public/api/chat/admin/message',
       {
-        session_id: sessionId,
+        session_id: sessionId.value, // Use reactive value
         message: messageToSend,
         website: props.website,
         sender_type: 'user',
       },
     )
 
+    // Wait a bit for the message to be processed
     await new Promise((resolve) => setTimeout(resolve, 500))
 
+    // Refresh messages
     await getMessage()
     await nextTick()
     scrollToBottom()
   } catch (err) {
-    console.error(err)
+    console.error('Failed to send message:', err)
     newMessage.value = messageToSend // Restore message on error
   } finally {
     sending.value = false
@@ -141,30 +169,6 @@ const formatTime = (timestamp) => {
     minute: '2-digit',
   })
 }
-
-onMounted(async () => {
-  const stored = localStorage.getItem(`chatMessages_${props.userId}`)
-  const oneDay = 1 * 24 * 60 * 60 * 1000
-
-  if (stored) {
-    const data = JSON.parse(stored)
-    if (!data.timestamp || Date.now() - data.timestamp > oneDay) {
-      localStorage.removeItem(`chatMessages_${props.userId}`)
-      await getMessage() // fetch from backend
-    } else {
-      chatMessages.value = data.chatMessages
-      await nextTick()
-      scrollToBottom()
-      setTimeout(() => {
-        getMessage()
-      }, 10000)
-    }
-  } else {
-    await getMessage() // no stored data
-    await nextTick()
-    scrollToBottom()
-  }
-})
 </script>
 
 <template>
