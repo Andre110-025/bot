@@ -1,7 +1,9 @@
+// src/components/YourChatComponent.vue
 <script setup>
-import { ref, nextTick, onMounted } from 'vue'
+import { ref, nextTick, onMounted, onBeforeUnmount } from 'vue'
 import axios from 'axios'
 import getUserId from './utils/userId'
+import { useAbly } from '../composables/userAbly'
 
 const props = defineProps({
   userId: { type: String, required: true },
@@ -13,6 +15,10 @@ const sending = ref(false)
 const loading = ref(false)
 const chatMessages = ref([])
 const newMessage = ref('')
+
+// Initialize Ably Composables
+const { initializeAbly, onAdminReply, isConnected, disconnect } = useAbly()
+let unsubscribeFromAbly = () => {} // Placeholder for the unsubscribe function
 
 const cleanWebsite = props.website
   .replace(/^https?:\/\//, '')
@@ -29,40 +35,36 @@ const saveMessages = () => {
 }
 
 const sessionId = getUserId(cleanWebsite)
-console.log('admin-side:', sessionId)
+console.log('Session ID:', sessionId)
 
-const getMessage = async () => {
+// Renamed and streamlined fetch
+const fetchInitialMessages = async () => {
   if (!cleanWebsite) return
   try {
-    loading.value = true
-    const response = await axios.get(
-      `https://assitance.storehive.com.ng/public/api/chat/admin/session/${sessionId}`,
-      { params: { website: props.website } },
-    )
-    console.log('Session messages:', response.data)
+    loading.value = true // Using props.api for more flexibility, assuming it contains the base URL
+    const url = `https://assitance.storehive.com.ng/public/api/chat/admin/session/${sessionId}`
+    const response = await axios.get(url, {
+      params: { website: props.website },
+    }) // Ensure messages are properly formatted with sender types
 
-    // Ensure messages are properly formatted with sender types
     chatMessages.value = (response.data.data?.messages || []).map((msg) => {
       // Normalize sender type - assuming 'user' for current user, 'admin' for others
-      // Adjust this logic based on your actual API response structure
       const senderType = msg.sender_type === 'user' ? 'user' : 'admin'
       return {
         ...msg,
-        sender: senderType,
+        sender: senderType, // Used for CSS alignment
       }
     })
 
     saveMessages()
+    await nextTick()
+    scrollToBottom()
   } catch (error) {
-    // console.error('Failed to fetch all request:', error)
+    console.error('Failed to fetch session messages:', error)
   } finally {
     loading.value = false
   }
 }
-
-onMounted(() => {
-  getMessage()
-})
 
 const sendMessage = async () => {
   if (!newMessage.value.trim() || sending.value) return
@@ -71,39 +73,31 @@ const sendMessage = async () => {
   newMessage.value = '' // Clear input immediately
 
   try {
-    sending.value = true
+    sending.value = true // Optimistically add user message to UI immediately
 
-    // Optimistically add user message to UI immediately
     const userMessage = {
       message: messageToSend,
       sender: 'user',
       sender_type: 'user',
-      timestamp: new Date().toISOString(),
+      timestamp: new Date().toISOString(), // Add an ID for better keying, even if temporary
+      id: Date.now() + Math.random(),
     }
 
     chatMessages.value.push(userMessage)
     saveMessages()
     await nextTick()
-    scrollToBottom()
+    scrollToBottom() // Post the message
 
-    const response = await axios.post(
-      'https://assitance.storehive.com.ng/public/api/chat/admin/message',
-      {
-        session_id: sessionId,
-        message: messageToSend,
-        website: props.website,
-        sender_type: 'user',
-      },
-    )
-
-    await new Promise((resolve) => setTimeout(resolve, 500))
-
-    // Refresh messages to get any admin response
-    await getMessage()
-    await nextTick()
-    scrollToBottom()
+    await axios.post('https://assitance.storehive.com.ng/public/api/chat/admin/message', {
+      session_id: sessionId,
+      message: messageToSend,
+      website: props.website,
+      sender_type: 'user',
+    }) // --- Ably Improvement: NO need to call fetchInitialMessages() here!
+    // The real-time subscription will handle admin replies.
+    // Remove: await getMessage();
   } catch (err) {
-    console.error(err)
+    console.error('Message send failed:', err)
     newMessage.value = messageToSend // Restore message on error
   } finally {
     sending.value = false
@@ -134,11 +128,24 @@ const formatTime = (timestamp) => {
   })
 }
 
-// Helper function to determine message alignment
 const getMessageAlignment = (msg) => {
-  // User messages (current user) should be on the right
-  // Admin messages should be on the left
   return msg.sender === 'user' || msg.sender_type === 'user' ? 'user' : 'admin'
+}
+
+const handleAdminReply = async (messageData) => {
+  // Format the incoming admin message
+  const adminMessage = {
+    message: messageData.message,
+    sender: 'admin',
+    sender_type: 'admin',
+    timestamp: messageData.timestamp || new Date().toISOString(),
+    id: messageData.id || Date.now() + Math.random(),
+  } // Add to the messages array
+
+  chatMessages.value.push(adminMessage)
+  saveMessages()
+  await nextTick()
+  scrollToBottom()
 }
 
 onMounted(async () => {
@@ -149,99 +156,147 @@ onMounted(async () => {
     const data = JSON.parse(stored)
     if (!data.timestamp || Date.now() - data.timestamp > oneDay) {
       localStorage.removeItem(`chatMessages_${props.userId}`)
-      await getMessage()
+      await fetchInitialMessages()
     } else {
       chatMessages.value = data.chatMessages
       await nextTick()
-      scrollToBottom()
+      scrollToBottom() // Call fetch to get any missed messages since the last open, but without blocking
       setTimeout(() => {
-        getMessage()
+        fetchInitialMessages()
       }, 1000)
     }
   } else {
-    await getMessage()
+    await fetchInitialMessages()
     await nextTick()
     scrollToBottom()
+  } // 🚀 Ably Integration: Initialize and Subscribe
+
+  const isAblyInitialized = await initializeAbly()
+  if (isAblyInitialized) {
+    // Subscribe to admin replies for this specific session ID
+    unsubscribeFromAbly = onAdminReply(sessionId, handleAdminReply)
   }
+})
+
+onBeforeUnmount(() => {
+  // Clean up Ably connection and subscription
+  unsubscribeFromAbly()
+  disconnect()
 })
 </script>
 
 <template>
+   
   <div class="cdUser011011-chat-container">
+       
     <div class="cdUser011011-chat-header">
+           
       <div class="cdUser011011-header-content">
+               
         <div class="cdUser011011-status-indicator">
-          <div class="cdUser011011-status-dot"></div>
-          <span>Admin Support</span>
+                             
+          <div
+            class="cdUser011011-status-dot"
+            :class="{ 'is-connected': isConnected, 'is-connecting': !isConnected }"
+          ></div>
+                    <span>Admin Support ({{ isConnected ? 'Online' : 'Offline' }})</span>        
         </div>
+             
       </div>
+         
     </div>
 
+       
     <div class="cdUser011011-messages-wrapper">
+           
       <div ref="chatContainerRef" class="cdUser011011-messages-container">
+                       
         <div
           v-for="(msg, i) in chatMessages"
-          :key="i"
+          :key="msg.id || i"
           class="cdUser011011-message-row"
           :class="getMessageAlignment(msg)"
         >
+                   
           <div class="cdUser011011-message-content">
+                       
             <div
               class="cdUser011011-avatar"
               :class="`cdUser011011-avatar-${getMessageAlignment(msg)}`"
             >
-              <span v-if="getMessageAlignment(msg) === 'admin'">A</span>
-              <span v-else>Y</span>
+                            <span v-if="getMessageAlignment(msg) === 'admin'">A</span>              
+              <span v-else>Y</span>            
             </div>
+                       
             <div class="cdUser011011-bubble-wrapper">
+                           
               <div
                 class="cdUser011011-message-bubble"
                 :class="`cdUser011011-bubble-${getMessageAlignment(msg)}`"
               >
+                               
                 <p class="cdUser011011-message-text">{{ msg.message }}</p>
+                             
               </div>
-              <span class="cdUser011011-message-time">{{ formatTime(msg.timestamp) }}</span>
+                           
+              <span class="cdUser011011-message-time">{{ formatTime(msg.timestamp) }}</span>        
+                 
             </div>
+                     
           </div>
+                 
         </div>
-
+                               
         <div v-if="loading" class="cdUser011011-loading-state">
+                   
           <div class="cdUser011011-typing-indicator">
-            <span></span>
-            <span></span>
-            <span></span>
+                        <span></span>             <span></span>             <span></span>          
           </div>
-          <p>Loading Admin Session...</p>
+                   
+          <p>Loading Admin Section...</p>
+                 
         </div>
 
+                       
         <div v-if="chatMessages.length === 0 && !loading" class="cdUser011011-empty-state">
+                   
           <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24">
+                       
             <path
               fill="currentColor"
               d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2m0 14H6l-2 2V4h16z"
             />
+                     
           </svg>
+                   
           <p>No messages yet</p>
-          <span>Start a conversation below</span>
+                    <span>Start a conversation below</span>        
         </div>
+             
       </div>
+         
     </div>
 
+           
     <div class="cdUser011011-input-wrapper">
+           
       <div class="cdUser011011-input-container">
+               
         <input
           v-model="newMessage"
           @keyup.enter="sendMessage"
           type="text"
           placeholder="Type your message..."
-          :disabled="sending"
+          :disabled="sending || !isConnected"
           class="cdUser011011-message-input"
         />
+               
         <button
           @click="sendMessage"
           class="cdUser011011-send-btn"
-          :disabled="!newMessage.trim() || sending"
+          :disabled="!newMessage.trim() || sending || !isConnected"
         >
+                   
           <svg
             v-if="!sending"
             xmlns="http://www.w3.org/2000/svg"
@@ -249,12 +304,19 @@ onMounted(async () => {
             height="20"
             viewBox="0 0 24 24"
           >
+                       
             <path fill="currentColor" d="M2.01 21L23 12L2.01 3L2 10l15 2l-15 2z" />
+                     
           </svg>
+                   
           <div v-else class="cdUser011011-btn-loader"></div>
+                 
         </button>
+             
       </div>
+         
     </div>
+     
   </div>
 </template>
 
