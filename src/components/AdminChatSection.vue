@@ -60,6 +60,10 @@ const getMessage = async () => {
   }
 }
 
+onMounted(() => {
+  getMessage()
+})
+
 const sendMessage = async () => {
   if (!newMessage.value.trim() || sending.value) return
 
@@ -168,7 +172,7 @@ onMounted(async () => {
       <div class="cdUser011011-header-content">
         <div class="cdUser011011-status-indicator">
           <div class="cdUser011011-status-dot"></div>
-          <span>Live Support</span>
+          <span>Admin Support</span>
         </div>
       </div>
     </div>
@@ -207,7 +211,7 @@ onMounted(async () => {
             <span></span>
             <span></span>
           </div>
-          <p>Admin is typing...</p>
+          <p>Loading Admin Session...</p>
         </div>
 
         <div v-if="chatMessages.length === 0 && !loading" class="cdUser011011-empty-state">
