@@ -14,7 +14,8 @@ const loading = ref(false)
 const chatMessages = ref([])
 const allChats = ref([])
 const newMessage = ref('')
-const sessionId = ref(null) // Make it reactive
+const sessionId = ref(null)
+const isSessionReady = ref(false)
 
 const cleanWebsite = props.website
   .replace(/^https?:\/\//, '')
@@ -30,16 +31,23 @@ const saveMessages = () => {
   localStorage.setItem(`chatMessages_${props.userId}`, JSON.stringify(payload))
 }
 
-// Initialize sessionId reactively
-const initializeSession = () => {
-  sessionId.value = getUserId(cleanWebsite)
-  console.log('admin-side sessionId:', sessionId.value)
+// Initialize session asynchronously
+const initializeSession = async () => {
+  try {
+    console.log('Initializing session...')
+    sessionId.value = getUserId(cleanWebsite)
+    console.log('Session ID initialized:', sessionId.value)
+    isSessionReady.value = true
+    return sessionId.value
+  } catch (error) {
+    console.error('Failed to initialize session:', error)
+    return null
+  }
 }
 
 const getMessage = async () => {
-  // Wait until sessionId is available
   if (!sessionId.value || !cleanWebsite) {
-    console.log('Waiting for sessionId...')
+    console.log('Waiting for session ID...')
     return
   }
 
@@ -49,38 +57,40 @@ const getMessage = async () => {
 
     const response = await axios.get(
       `https://assitance.storehive.com.ng/public/api/chat/admin/session/${sessionId.value}`,
-      { params: { website: props.website } },
+      {
+        params: { website: props.website },
+        timeout: 10000, // 10 second timeout
+      },
     )
 
-    console.log('Session messages response:', response.data)
+    console.log('API Response:', response.data)
     chatMessages.value = response.data.data?.messages || []
 
-    // Save to localStorage after successful fetch
     saveMessages()
   } catch (error) {
     console.error('Failed to fetch messages:', error)
-    // If session doesn't exist, you might want to create a new one
     if (error.response?.status === 404) {
-      console.log('Session not found, might need to create new session')
-      chatMessages.value = [] // Clear any stale messages
+      console.log('Session not found, starting fresh')
+      chatMessages.value = []
+      saveMessages()
     }
   } finally {
     loading.value = false
   }
 }
 
-// Watch for sessionId changes and load messages
-watch(sessionId, (newSessionId) => {
-  if (newSessionId) {
-    console.log('SessionId changed, loading messages:', newSessionId)
+// Watch for session readiness
+watch(isSessionReady, (ready) => {
+  if (ready) {
+    console.log('Session is ready, loading messages...')
     getMessage()
   }
 })
 
 onMounted(async () => {
-  // Initialize session first
-  initializeSession()
+  console.log('Component mounted, initializing session...')
 
+  // First, try to load from localStorage for immediate UI
   const stored = localStorage.getItem(`chatMessages_${props.userId}`)
   const oneDay = 1 * 24 * 60 * 60 * 1000
 
@@ -88,23 +98,23 @@ onMounted(async () => {
     const data = JSON.parse(stored)
     if (!data.timestamp || Date.now() - data.timestamp > oneDay) {
       localStorage.removeItem(`chatMessages_${props.userId}`)
-      // getMessage() will be called by the watcher when sessionId is set
     } else {
       chatMessages.value = data.chatMessages
       await nextTick()
       scrollToBottom()
-      // Refresh from server after a delay
-      setTimeout(() => {
-        if (sessionId.value) {
-          getMessage()
-        }
-      }, 1000)
     }
-  } else {
-    // getMessage() will be called by the watcher when sessionId is set
-    await nextTick()
-    scrollToBottom()
   }
+
+  // Then initialize session and load fresh data
+  await initializeSession()
+
+  // If session initialized but no stored messages, load from API
+  if (isSessionReady.value && chatMessages.value.length === 0) {
+    await getMessage()
+  }
+
+  await nextTick()
+  scrollToBottom()
 })
 
 const addMessage = (msg) => {
@@ -114,33 +124,40 @@ const addMessage = (msg) => {
 }
 
 const sendMessage = async () => {
-  if (!newMessage.value.trim() || sending.value || !sessionId.value) return
+  if (!newMessage.value.trim() || sending.value || !sessionId.value) {
+    console.log('Cannot send message - missing requirements')
+    return
+  }
 
   const messageToSend = newMessage.value.trim()
-  newMessage.value = '' // Clear input immediately
+  newMessage.value = ''
 
   try {
     sending.value = true
+    console.log('Sending message with session:', sessionId.value)
+
     const response = await axios.post(
       'https://assitance.storehive.com.ng/public/api/chat/admin/message',
       {
-        session_id: sessionId.value, // Use reactive value
+        session_id: sessionId.value,
         message: messageToSend,
         website: props.website,
         sender_type: 'user',
       },
+      {
+        timeout: 10000,
+      },
     )
 
-    // Wait a bit for the message to be processed
-    await new Promise((resolve) => setTimeout(resolve, 500))
+    console.log('Message sent successfully:', response.data)
 
-    // Refresh messages
+    // Refresh messages after sending
     await getMessage()
     await nextTick()
     scrollToBottom()
   } catch (err) {
     console.error('Failed to send message:', err)
-    newMessage.value = messageToSend // Restore message on error
+    newMessage.value = messageToSend
   } finally {
     sending.value = false
   }
@@ -169,6 +186,11 @@ const formatTime = (timestamp) => {
     minute: '2-digit',
   })
 }
+
+// Debug: log sessionId changes
+watch(sessionId, (newId) => {
+  console.log('sessionId changed to:', newId)
+})
 </script>
 
 <template>
