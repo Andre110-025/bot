@@ -208,7 +208,7 @@ onBeforeUnmount(() => {
     <div class="chat-header">
       <div class="header-left">
         <div class="status-dot" :class="{ active: isConnected }"></div>
-        <span class="header-title">Support Chat</span>
+        <span class="header-title">Admin Chat</span>
       </div>
       <span class="status-text">{{ statusText }}</span>
     </div>
