@@ -1,16 +1,14 @@
-// src/composables/useAbly.js (User/Chatbot Side)
+// src/composables/useAbly.js (User/Chatbot Side - FIXED)
 import { ref, readonly } from 'vue'
 import * as Ably from 'ably'
 
 const ablyService = ref(null)
 const isConnected = ref(false)
 
-// Your backend auth endpoint
 const ABLY_AUTH_URL = 'https://assitance.storehive.com.ng/public/api/ably/auth'
 
 export function useAbly() {
   const initializeAbly = async () => {
-    // If already initialized, return success
     if (ablyService.value) {
       console.log('Ably already initialized')
       return true
@@ -41,7 +39,6 @@ export function useAbly() {
         throw new Error(json.message || json.error || 'Auth failed')
       }
 
-      // Initialize Ably
       const ably = new Ably.Realtime({
         token: json.data.token,
         echoMessages: false,
@@ -49,7 +46,6 @@ export function useAbly() {
         autoConnect: true,
       })
 
-      // Connection event handlers
       ably.connection.on('connected', () => {
         console.log('✅ Ably CONNECTED (User)')
         isConnected.value = true
@@ -77,47 +73,7 @@ export function useAbly() {
     }
   }
 
-  /**
-   * Subscribe to messages for a specific session
-   * This is what the user needs - listen for admin replies to THEIR chat
-   * @param {string} sessionId - The user's session ID
-   * @param {function} callback - Callback when admin sends a message
-   */
-  // const onAdminReply = (sessionId, callback) => {
-  //   if (!ablyService.value) {
-  //     console.error('❌ Cannot subscribe: Ably not initialized')
-  //     return () => {}
-  //   }
-
-  //   try {
-  //     // Listen to the chat-messages channel
-  //     const channel = ablyService.value.channels.get('chat-messages')
-
-  //     // Subscribe and filter for this user's session
-  //     const handler = (msg) => {
-  //       if (msg.name === 'new.message' && msg.data) {
-  //         // Only process messages for THIS session from admin
-  //         if (msg.data.session_id === sessionId && msg.data.sender_type === 'admin') {
-  //           console.log('💬 Admin replied:', msg.data)
-  //           callback(msg.data)
-  //         }
-  //       }
-  //     }
-
-  //     channel.subscribe(handler)
-  //     console.log(`✅ Listening for admin replies on session: ${sessionId}`)
-
-  //     // Return unsubscribe function
-  //     return () => {
-  //       channel.unsubscribe(handler)
-  //       console.log(`🔕 Stopped listening to session: ${sessionId}`)
-  //     }
-  //   } catch (err) {
-  //     console.error('❌ Subscribe error:', err)
-  //     return () => {}
-  //   }
-  // }
-
+  // ✅ FIXED: Main change is here - check msg.name instead of msg.data.event_type
   const onAdminReply = (sessionId, callback) => {
     if (!ablyService.value) {
       console.error('❌ Cannot subscribe: Ably not initialized')
@@ -125,24 +81,31 @@ export function useAbly() {
     }
 
     try {
-      // Listen to the chat-messages channel
       const channel = ablyService.value.channels.get('chat-messages')
 
-      // Subscribe and filter for this user's session
       const handler = (msg) => {
         console.log('🔔 USER RAW ABLY MESSAGE:', {
           channel: 'chat-messages',
-          data: msg.data, // ← The data is here!
+          eventName: msg.name, // ← This is the event name
+          data: msg.data, // ← This is the payload
+          timestamp: msg.timestamp,
           fullMessage: msg,
         })
 
-        // NEW CODE: Check event_type inside msg.data
-        if (msg.data && msg.data.event_type === 'new.message') {
-          console.log('📩 Potential admin message detected:', msg.data)
+        // ✅ FIXED: Check msg.name (not msg.data.event_type)
+        if (msg.name === 'new.message' && msg.data) {
+          console.log('📩 Potential message detected:', msg.data)
 
+          // Filter for this user's session and admin messages
           if (msg.data.session_id === sessionId && msg.data.sender_type === 'admin') {
             console.log('🎯 ✅ ADMIN MESSAGE FOR ME! Processing...', msg.data)
             callback(msg.data)
+          } else {
+            console.log('⚠️ Message not for me:', {
+              mySession: sessionId,
+              msgSession: msg.data.session_id,
+              sender: msg.data.sender_type,
+            })
           }
         }
       }
@@ -161,7 +124,6 @@ export function useAbly() {
         `✅ Listening for admin replies on session: ${sessionId} (channel: chat-messages)`,
       )
 
-      // Return unsubscribe function
       return () => {
         channel.unsubscribe(handler)
         console.log(`🔕 Stopped listening to session: ${sessionId}`)
@@ -172,9 +134,6 @@ export function useAbly() {
     }
   }
 
-  /**
-   * Generic subscribe function (if you need it for other channels)
-   */
   const subscribe = (channelName, callback) => {
     if (!ablyService.value) {
       console.error('❌ Cannot subscribe: Ably not initialized')
@@ -201,9 +160,6 @@ export function useAbly() {
     }
   }
 
-  /**
-   * Disconnect and cleanup
-   */
   const disconnect = () => {
     if (ablyService.value) {
       ablyService.value.close()

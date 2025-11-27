@@ -1,4 +1,3 @@
-// src/components/YourChatComponent.vue
 <script setup>
 import { ref, nextTick, onMounted, onBeforeUnmount, computed } from 'vue'
 import axios from 'axios'
