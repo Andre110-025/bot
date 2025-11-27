@@ -226,6 +226,7 @@ onMounted(async () => {
     unsubscribeFromAbly = onAdminReply(sessionId, handleAdminReply)
 
     try {
+      // Already correct
       await initializeTyping(window.ablyInstance, `chat-${sessionId}`)
       console.log('✅ Typing indicator initialized for session:', sessionId)
     } catch (error) {
