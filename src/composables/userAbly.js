@@ -132,44 +132,18 @@ export function useAbly() {
       const handler = (msg) => {
         console.log('🔔 USER RAW ABLY MESSAGE:', {
           channel: 'chat-messages',
-          eventName: msg.name,
+          data: msg.data, // ← The data is here!
           fullMessage: msg,
-          data: msg.data,
-          timestamp: msg.timestamp,
-          // Session matching info
-          messageSessionId: msg.data?.session_id,
-          mySessionId: sessionId,
-          sessionMatch: msg.data?.session_id === sessionId,
-          // Sender info
-          senderType: msg.data?.sender_type,
-          isFromAdmin: msg.data?.sender_type === 'admin',
-          // Should we process this?
-          shouldProcess:
-            msg.name === 'new.message' &&
-            msg.data?.session_id === sessionId &&
-            msg.data?.sender_type === 'admin',
         })
 
-        if (msg.name === 'new.message' && msg.data) {
-          console.log('📩 Potential admin message detected:', {
-            messageContent: msg.data.message,
-            sessionCheck: `Message session: ${msg.data.session_id} vs My session: ${sessionId}`,
-            senderCheck: `Sender: ${msg.data.sender_type}`,
-          })
+        // NEW CODE: Check event_type inside msg.data
+        if (msg.data && msg.data.event_type === 'new.message') {
+          console.log('📩 Potential admin message detected:', msg.data)
 
-          // Only process messages for THIS session from admin
           if (msg.data.session_id === sessionId && msg.data.sender_type === 'admin') {
             console.log('🎯 ✅ ADMIN MESSAGE FOR ME! Processing...', msg.data)
             callback(msg.data)
-          } else {
-            console.log('🚫 Message filtered out - reasons:', {
-              wrongSession: msg.data.session_id !== sessionId,
-              wrongSender: msg.data.sender_type !== 'admin',
-              details: `Expected session: ${sessionId}, got: ${msg.data.session_id} | Expected sender: admin, got: ${msg.data.sender_type}`,
-            })
           }
-        } else {
-          console.log('🚫 Ignored message - not a new.message event or missing data')
         }
       }
 
