@@ -138,6 +138,13 @@ const getMessageAlignment = (msg) => {
 }
 
 const handleAdminReply = async (messageData) => {
+  // 🔍 DEBUG LOG FOR USER SIDE
+  console.log('🔔 Message received in USER component:', {
+    messageData,
+    currentSession: sessionId,
+    match: messageData.session_id === sessionId,
+  })
+
   isTyping.value = false
 
   const adminMessage = {
