@@ -26,6 +26,7 @@ const {
   typingUsers,
   initializeTyping,
   startTyping,
+  stopTyping,
   disconnect: disconnectTyping,
 } = useTypingIndicator()
 
