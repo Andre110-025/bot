@@ -1,33 +1,32 @@
 import { ref, onUnmounted } from 'vue'
-import * as Ably from 'ably'
 import { ChatClient } from '@ably/chat'
 
 export function useTypingIndicator() {
   const isTyping = ref(false)
   const typingUsers = ref([]) // Array of users currently typing
   const room = ref(null) // Chat room instance
-  const ChatClient = ref(null) // Ably Chat client instance
+  const chatClient = ref(null) // Changed from ChatClient to chatClient to avoid shadowing
 
   const typingOptions = {
-    heartbeatThrottleMs: 3000,
+    timeoutMs: 3000, // Changed from heartbeatThrottleMs
   }
 
   const initializeTyping = async (ablyClient, roomName = 'chat-typing') => {
     try {
-      ChatClient.value = new ChatClient(ablyClient) // Initialize Ably Chat client
+      chatClient.value = new ChatClient(ablyClient) // Initialize Ably Chat client
 
-      room.value = await ChatClient.value.rooms.get(roomName, { typing: typingOptions }) // Get or create chat room with typing indicator
-      await room.value.attach() // Attach to the room
+      room.value = await chatClient.value.rooms.get(roomName, { typing: typingOptions })
+      await room.value.attach()
 
       // Set up typing indicator subscription
       room.value.typing.subscribe((event) => {
         // Exclude current user's typing status
-        const typingClientIds = Array.from(event.currentTyping).filter(
-          (id) => id !== ablyClient.clientId, // Exclude current user's clientId
+        const typingClientIds = Array.from(event.currentlyTyping).filter(
+          (id) => id !== ablyClient.auth.clientId, // Fixed: access clientId correctly
         )
 
-        typingUsers.value = typingClientIds // Update typing users list
-        isTyping.value = typingClientIds.length > 0 // Update isTyping status
+        typingUsers.value = typingClientIds
+        isTyping.value = typingClientIds.length > 0
 
         console.log('Typing users updated:', typingClientIds)
       })
@@ -42,21 +41,33 @@ export function useTypingIndicator() {
   // Function to signal that the user has started typing
   const startTyping = async () => {
     if (room.value) {
-      await room.value.typing.keystroke()
+      try {
+        await room.value.typing.start()
+      } catch (error) {
+        console.error('Error starting typing:', error)
+      }
     }
   }
 
   const stopTyping = async () => {
     if (room.value) {
-      await room.value.typing.keystroke() // ably automatically handles typing stop after heartbeat timeout
+      try {
+        await room.value.typing.stop()
+      } catch (error) {
+        console.error('Error stopping typing:', error)
+      }
     }
   }
 
   // Function to disconnect from the typing indicator
-  const disconnect = () => {
+  const disconnect = async () => {
     if (room.value) {
-      room.value.typing.unsubscribe() // Unsubscribe from typing events
-      room.value.detach() // Detach from the room
+      try {
+        room.value.typing.unsubscribe()
+        await room.value.detach()
+      } catch (error) {
+        console.error('Error disconnecting typing indicator:', error)
+      }
     }
   }
 

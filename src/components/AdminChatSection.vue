@@ -16,6 +16,7 @@ const loading = ref(false)
 const chatMessages = ref([])
 const newMessage = ref('')
 const isTyping = ref(false)
+let typingTimeout = null
 
 // Initialize Ably Composables
 const { initializeAbly, onAdminReply, isConnected, disconnect: disconnectAbly } = useAbly()
@@ -172,11 +173,20 @@ const handleAdminReply = async (messageData) => {
   scrollToBottom()
 }
 
-// const statusText = computed(() => {
-//   if (!isConnected.value) return 'Connecting...'
-//   if (isTyping.value) return 'Typing...'
-//   return 'Online'
-// })
+const handleTyping = () => {
+  if (isConnected.value) {
+    startTyping()
+
+    // Reset timeout
+    if (typingTimeout) {
+      clearTimeout(typingTimeout)
+    }
+
+    typingTimeout = setTimeout(() => {
+      stopTyping() // Explicitly stop typing after 3 seconds of inactivity
+    }, 3000)
+  }
+}
 
 onMounted(async () => {
   const stored = localStorage.getItem(`chatMessages_${props.userId}`)
