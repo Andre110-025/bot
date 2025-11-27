@@ -73,7 +73,7 @@ export function useAbly() {
     }
   }
 
-  // ✅ FIXED: Main change is here - check msg.name instead of msg.data.event_type
+  // ✅ FIXED: User-side onAdminReply function
   const onAdminReply = (sessionId, callback) => {
     if (!ablyService.value) {
       console.error('❌ Cannot subscribe: Ably not initialized')
@@ -86,25 +86,37 @@ export function useAbly() {
       const handler = (msg) => {
         console.log('🔔 USER RAW ABLY MESSAGE:', {
           channel: 'chat-messages',
-          eventName: msg.name, // ← This is the event name
-          data: msg.data, // ← This is the payload
+          eventName: msg.name,
+          data: msg.data,
           timestamp: msg.timestamp,
-          fullMessage: msg,
         })
 
         // ✅ FIXED: Check msg.name (not msg.data.event_type)
         if (msg.name === 'new.message' && msg.data) {
           console.log('📩 Potential message detected:', msg.data)
 
-          // Filter for this user's session and admin messages
-          if (msg.data.session_id === sessionId && msg.data.sender_type === 'admin') {
+          // ✅ FIXED: Add session ID normalization and better debugging
+          const msgSession = String(msg.data.session_id).trim()
+          const mySession = String(sessionId).trim()
+
+          console.log('🔍 Session ID Comparison:', {
+            msgSession,
+            mySession,
+            match: msgSession === mySession,
+            senderType: msg.data.sender_type,
+            shouldProcess: msgSession === mySession && msg.data.sender_type === 'admin',
+          })
+
+          // ✅ FIXED: Filter for this user's session and admin messages
+          if (msgSession === mySession && msg.data.sender_type === 'admin') {
             console.log('🎯 ✅ ADMIN MESSAGE FOR ME! Processing...', msg.data)
             callback(msg.data)
           } else {
             console.log('⚠️ Message not for me:', {
-              mySession: sessionId,
-              msgSession: msg.data.session_id,
+              mySession,
+              msgSession,
               sender: msg.data.sender_type,
+              reason: msgSession !== mySession ? 'session_mismatch' : 'not_admin_message',
             })
           }
         }

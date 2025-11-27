@@ -203,7 +203,6 @@ onBeforeUnmount(() => {
 
 <template>
   <div class="chat-container">
-    <!-- Simple Clean Header -->
     <div class="chat-header">
       <div class="header-left">
         <div class="status-dot" :class="{ active: isConnected }"></div>
@@ -212,7 +211,6 @@ onBeforeUnmount(() => {
       <span class="status-text">{{ statusText }}</span>
     </div>
 
-    <!-- Messages Area -->
     <div class="messages-wrapper">
       <div ref="chatContainerRef" class="messages-container">
         <template v-for="(msg, i) in chatMessages" :key="msg.id || i">
@@ -253,13 +251,11 @@ onBeforeUnmount(() => {
           </div>
         </div>
 
-        <!-- Loading State -->
         <div v-if="loading" class="loading-state">
           <div class="spinner"></div>
           <p>Loading messages...</p>
         </div>
 
-        <!-- Empty State -->
         <div v-if="chatMessages.length === 0 && !loading" class="empty-state">
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -278,7 +274,6 @@ onBeforeUnmount(() => {
       </div>
     </div>
 
-    <!-- Input Area -->
     <div class="input-wrapper">
       <input
         v-model="newMessage"
