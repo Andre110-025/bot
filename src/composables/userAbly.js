@@ -83,6 +83,41 @@ export function useAbly() {
    * @param {string} sessionId - The user's session ID
    * @param {function} callback - Callback when admin sends a message
    */
+  // const onAdminReply = (sessionId, callback) => {
+  //   if (!ablyService.value) {
+  //     console.error('❌ Cannot subscribe: Ably not initialized')
+  //     return () => {}
+  //   }
+
+  //   try {
+  //     // Listen to the chat-messages channel
+  //     const channel = ablyService.value.channels.get('chat-messages')
+
+  //     // Subscribe and filter for this user's session
+  //     const handler = (msg) => {
+  //       if (msg.name === 'new.message' && msg.data) {
+  //         // Only process messages for THIS session from admin
+  //         if (msg.data.session_id === sessionId && msg.data.sender_type === 'admin') {
+  //           console.log('💬 Admin replied:', msg.data)
+  //           callback(msg.data)
+  //         }
+  //       }
+  //     }
+
+  //     channel.subscribe(handler)
+  //     console.log(`✅ Listening for admin replies on session: ${sessionId}`)
+
+  //     // Return unsubscribe function
+  //     return () => {
+  //       channel.unsubscribe(handler)
+  //       console.log(`🔕 Stopped listening to session: ${sessionId}`)
+  //     }
+  //   } catch (err) {
+  //     console.error('❌ Subscribe error:', err)
+  //     return () => {}
+  //   }
+  // }
+
   const onAdminReply = (sessionId, callback) => {
     if (!ablyService.value) {
       console.error('❌ Cannot subscribe: Ably not initialized')
@@ -95,17 +130,62 @@ export function useAbly() {
 
       // Subscribe and filter for this user's session
       const handler = (msg) => {
+        console.log('🔔 USER RAW ABLY MESSAGE:', {
+          channel: 'chat-messages',
+          eventName: msg.name,
+          fullMessage: msg,
+          data: msg.data,
+          timestamp: msg.timestamp,
+          // Session matching info
+          messageSessionId: msg.data?.session_id,
+          mySessionId: sessionId,
+          sessionMatch: msg.data?.session_id === sessionId,
+          // Sender info
+          senderType: msg.data?.sender_type,
+          isFromAdmin: msg.data?.sender_type === 'admin',
+          // Should we process this?
+          shouldProcess:
+            msg.name === 'new.message' &&
+            msg.data?.session_id === sessionId &&
+            msg.data?.sender_type === 'admin',
+        })
+
         if (msg.name === 'new.message' && msg.data) {
+          console.log('📩 Potential admin message detected:', {
+            messageContent: msg.data.message,
+            sessionCheck: `Message session: ${msg.data.session_id} vs My session: ${sessionId}`,
+            senderCheck: `Sender: ${msg.data.sender_type}`,
+          })
+
           // Only process messages for THIS session from admin
           if (msg.data.session_id === sessionId && msg.data.sender_type === 'admin') {
-            console.log('💬 Admin replied:', msg.data)
+            console.log('🎯 ✅ ADMIN MESSAGE FOR ME! Processing...', msg.data)
             callback(msg.data)
+          } else {
+            console.log('🚫 Message filtered out - reasons:', {
+              wrongSession: msg.data.session_id !== sessionId,
+              wrongSender: msg.data.sender_type !== 'admin',
+              details: `Expected session: ${sessionId}, got: ${msg.data.session_id} | Expected sender: admin, got: ${msg.data.sender_type}`,
+            })
           }
+        } else {
+          console.log('🚫 Ignored message - not a new.message event or missing data')
         }
       }
 
+      // Add channel state monitoring
+      channel.on('attached', () => {
+        console.log(`✅ Channel 'chat-messages' attached for user session: ${sessionId}`)
+      })
+
+      channel.on('failed', (stateChange) => {
+        console.error(`❌ Channel 'chat-messages' failed:`, stateChange)
+      })
+
       channel.subscribe(handler)
-      console.log(`✅ Listening for admin replies on session: ${sessionId}`)
+      console.log(
+        `✅ Listening for admin replies on session: ${sessionId} (channel: chat-messages)`,
+      )
 
       // Return unsubscribe function
       return () => {
