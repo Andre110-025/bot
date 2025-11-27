@@ -3,6 +3,7 @@ import { ref, nextTick, onMounted, onBeforeUnmount, computed } from 'vue'
 import axios from 'axios'
 import getUserId from './utils/userId'
 import { useAbly } from '../composables/userAbly'
+import { useTypingIndicator } from '../composables/useTypingIndicator'
 
 const props = defineProps({
   userId: { type: String, required: true },
@@ -17,8 +18,26 @@ const newMessage = ref('')
 const isTyping = ref(false)
 
 // Initialize Ably Composables
-const { initializeAbly, onAdminReply, isConnected, disconnect } = useAbly()
-let unsubscribeFromAbly = () => {}
+const { initializeAbly, onAdminReply, isConnected, disconnect: disconnectAbly } = useAbly()
+
+const {
+  isTyping: isSomeoneTyping,
+  typingUsers,
+  initializeTyping,
+  startTyping,
+  disconnect: disconnectTyping,
+} = useTypingIndicator()
+
+let unsubscribeFromAbly = () => {} // To hold the unsubscribe function
+
+const statusText = computed(() => {
+  if (!isConnected.value) return 'Connecting...'
+  if (isSomeoneTyping.value && typingUsers.value.length > 0) {
+    const users = typingUsers.value.join(' and ')
+    return `${users} ${typingUsers.value.length === 1 ? 'is' : 'are'} typing...`
+  }
+  return 'Online'
+})
 
 const cleanWebsite = props.website
   .replace(/^https?:\/\//, '')
@@ -137,13 +156,6 @@ const getMessageAlignment = (msg) => {
 }
 
 const handleAdminReply = async (messageData) => {
-  // 🔍 DEBUG LOG FOR USER SIDE
-  console.log('🔔 Message received in USER component:', {
-    messageData,
-    currentSession: sessionId,
-    match: messageData.session_id === sessionId,
-  })
-
   isTyping.value = false
 
   const adminMessage = {
@@ -160,11 +172,11 @@ const handleAdminReply = async (messageData) => {
   scrollToBottom()
 }
 
-const statusText = computed(() => {
-  if (!isConnected.value) return 'Connecting...'
-  if (isTyping.value) return 'Typing...'
-  return 'Online'
-})
+// const statusText = computed(() => {
+//   if (!isConnected.value) return 'Connecting...'
+//   if (isTyping.value) return 'Typing...'
+//   return 'Online'
+// })
 
 onMounted(async () => {
   const stored = localStorage.getItem(`chatMessages_${props.userId}`)
@@ -189,15 +201,20 @@ onMounted(async () => {
     scrollToBottom()
   }
 
+  // Initialize Ably
   const isAblyInitialized = await initializeAbly()
   if (isAblyInitialized) {
     unsubscribeFromAbly = onAdminReply(sessionId, handleAdminReply)
+
+    await initializeTyping(window.ablyInstance, `chat-${sessionId}`) // Initialize typing indicator
   }
 })
 
 onBeforeUnmount(() => {
   unsubscribeFromAbly()
-  disconnect()
+  disconnectAbly()
+  disconnectTyping()
+  if (typingTimeout) clearTimeout(typingTimeout)
 })
 </script>
 
@@ -240,8 +257,7 @@ onBeforeUnmount(() => {
           </div>
         </template>
 
-        <!-- Typing Indicator -->
-        <div v-if="isTyping" class="message-row admin">
+        <div v-if="isSomeoneTyping && typingUsers.length > 0" class="message-row admin">
           <div class="message-bubble admin">
             <div class="typing-indicator">
               <span></span>
@@ -277,6 +293,7 @@ onBeforeUnmount(() => {
     <div class="input-wrapper">
       <input
         v-model="newMessage"
+        @keydown="handleTyping"
         @keyup.enter="sendMessage"
         type="text"
         placeholder="Type a message..."

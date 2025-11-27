@@ -10,12 +10,12 @@ const ABLY_AUTH_URL = 'https://assitance.storehive.com.ng/public/api/ably/auth'
 export function useAbly() {
   const initializeAbly = async () => {
     if (ablyService.value) {
-      console.log('Ably already initialized')
+      // console.log('Ably already initialized')
       return true
     }
 
     try {
-      console.log('🔄 Initializing Ably connection...')
+      // console.log('🔄 Initializing Ably connection...')
 
       const res = await fetch(ABLY_AUTH_URL, {
         method: 'POST',
@@ -47,16 +47,16 @@ export function useAbly() {
       })
 
       ably.connection.on('connected', () => {
-        console.log('✅ Ably CONNECTED (User)')
+        // console.log('✅ Ably CONNECTED (User)')
         isConnected.value = true
       })
 
       ably.connection.on('connecting', () => {
-        console.log('🔄 Ably connecting...')
+        // console.log('🔄 Ably connecting...')
       })
 
       ably.connection.on('disconnected', () => {
-        console.log('⚠️ Ably disconnected')
+        // console.log('⚠️ Ably disconnected')
         isConnected.value = false
       })
 
@@ -76,7 +76,7 @@ export function useAbly() {
   // ✅ FIXED: User-side onAdminReply function
   const onAdminReply = (sessionId, callback) => {
     if (!ablyService.value) {
-      console.error('❌ Cannot subscribe: Ably not initialized')
+      // console.error('❌ Cannot subscribe: Ably not initialized')
       return () => {}
     }
 
@@ -84,61 +84,61 @@ export function useAbly() {
       const channel = ablyService.value.channels.get('chat-messages')
 
       const handler = (msg) => {
-        console.log('🔔 USER RAW ABLY MESSAGE:', {
-          channel: 'chat-messages',
-          eventName: msg.name,
-          data: msg.data,
-          timestamp: msg.timestamp,
-        })
+        // console.log('🔔 USER RAW ABLY MESSAGE:', {
+        //   channel: 'chat-messages',
+        //   eventName: msg.name,
+        //   data: msg.data,
+        //   timestamp: msg.timestamp,
+        // })
 
         // ✅ FIXED: Check msg.name (not msg.data.event_type)
         if (msg.name === 'new.message' && msg.data) {
-          console.log('📩 Potential message detected:', msg.data)
+          // console.log('📩 Potential message detected:', msg.data)
 
           // ✅ FIXED: Add session ID normalization and better debugging
           const msgSession = String(msg.data.session_id).trim()
           const mySession = String(sessionId).trim()
 
-          console.log('🔍 Session ID Comparison:', {
-            msgSession,
-            mySession,
-            match: msgSession === mySession,
-            senderType: msg.data.sender_type,
-            shouldProcess: msgSession === mySession && msg.data.sender_type === 'admin',
-          })
+          // console.log('🔍 Session ID Comparison:', {
+          //   msgSession,
+          //   mySession,
+          //   match: msgSession === mySession,
+          //   senderType: msg.data.sender_type,
+          //   shouldProcess: msgSession === mySession && msg.data.sender_type === 'admin',
+          // })
 
           // ✅ FIXED: Filter for this user's session and admin messages
           if (msgSession === mySession && msg.data.sender_type === 'admin') {
-            console.log('🎯 ✅ ADMIN MESSAGE FOR ME! Processing...', msg.data)
+            // console.log('🎯 ✅ ADMIN MESSAGE FOR ME! Processing...', msg.data)
             callback(msg.data)
           } else {
-            console.log('⚠️ Message not for me:', {
-              mySession,
-              msgSession,
-              sender: msg.data.sender_type,
-              reason: msgSession !== mySession ? 'session_mismatch' : 'not_admin_message',
-            })
+            // console.log('⚠️ Message not for me:', {
+            //   mySession,
+            //   msgSession,
+            //   sender: msg.data.sender_type,
+            //   reason: msgSession !== mySession ? 'session_mismatch' : 'not_admin_message',
+            // })
           }
         }
       }
 
       // Add channel state monitoring
       channel.on('attached', () => {
-        console.log(`✅ Channel 'chat-messages' attached for user session: ${sessionId}`)
+        // console.log(`✅ Channel 'chat-messages' attached for user session: ${sessionId}`)
       })
 
       channel.on('failed', (stateChange) => {
-        console.error(`❌ Channel 'chat-messages' failed:`, stateChange)
+        // console.error(`❌ Channel 'chat-messages' failed:`, stateChange)
       })
 
       channel.subscribe(handler)
-      console.log(
-        `✅ Listening for admin replies on session: ${sessionId} (channel: chat-messages)`,
-      )
+      // console.log(
+      //   `✅ Listening for admin replies on session: ${sessionId} (channel: chat-messages)`,
+      // )
 
       return () => {
         channel.unsubscribe(handler)
-        console.log(`🔕 Stopped listening to session: ${sessionId}`)
+        // console.log(`🔕 Stopped listening to session: ${sessionId}`)
       }
     } catch (err) {
       console.error('❌ Subscribe error:', err)
@@ -156,15 +156,15 @@ export function useAbly() {
       const channel = ablyService.value.channels.get(channelName)
 
       channel.subscribe((msg) => {
-        console.log(`📩 Message on [${channelName}]:`, msg.name, msg.data)
+        // console.log(`📩 Message on [${channelName}]:`, msg.name, msg.data)
         callback(msg)
       })
 
-      console.log(`✅ Subscribed to channel: ${channelName}`)
+      // console.log(`✅ Subscribed to channel: ${channelName}`)
 
       return () => {
         channel.unsubscribe()
-        console.log(`🔕 Unsubscribed from channel: ${channelName}`)
+        // console.log(`🔕 Unsubscribed from channel: ${channelName}`)
       }
     } catch (err) {
       console.error(`❌ Subscribe error on ${channelName}:`, err)
@@ -177,7 +177,7 @@ export function useAbly() {
       ablyService.value.close()
       ablyService.value = null
       isConnected.value = false
-      console.log('👋 Ably disconnected')
+      // console.log('👋 Ably disconnected')
     }
   }
 
