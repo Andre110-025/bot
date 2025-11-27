@@ -3,26 +3,23 @@ import { ChatClient } from '@ably/chat'
 
 export function useTypingIndicator() {
   const isTyping = ref(false)
-  const typingUsers = ref([]) // Array of users currently typing
-  const room = ref(null) // Chat room instance
-  const chatClient = ref(null) // Changed from ChatClient to chatClient to avoid shadowing
+  const typingUsers = ref([])
+  const room = ref(null)
+  const chatClient = ref(null)
 
   const typingOptions = {
-    timeoutMs: 3000, // Changed from heartbeatThrottleMs
+    timeoutMs: 3000,
   }
 
   const initializeTyping = async (ablyClient, roomName = 'chat-typing') => {
     try {
-      chatClient.value = new ChatClient(ablyClient) // Initialize Ably Chat client
-
+      chatClient.value = new ChatClient(ablyClient)
       room.value = await chatClient.value.rooms.get(roomName, { typing: typingOptions })
       await room.value.attach()
 
-      // Set up typing indicator subscription
       room.value.typing.subscribe((event) => {
-        // Exclude current user's typing status
         const typingClientIds = Array.from(event.currentlyTyping).filter(
-          (id) => id !== ablyClient.auth.clientId, // Fixed: access clientId correctly
+          (id) => id !== ablyClient.auth.clientId,
         )
 
         typingUsers.value = typingClientIds
@@ -38,7 +35,6 @@ export function useTypingIndicator() {
     }
   }
 
-  // Function to signal that the user has started typing
   const startTyping = async () => {
     if (room.value) {
       try {
@@ -59,7 +55,6 @@ export function useTypingIndicator() {
     }
   }
 
-  // Function to disconnect from the typing indicator
   const disconnect = async () => {
     if (room.value) {
       try {
@@ -71,7 +66,6 @@ export function useTypingIndicator() {
     }
   }
 
-  // Clean up on component unmount
   onUnmounted(() => {
     disconnect()
   })

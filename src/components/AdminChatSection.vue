@@ -214,9 +214,22 @@ onMounted(async () => {
   // Initialize Ably
   const isAblyInitialized = await initializeAbly()
   if (isAblyInitialized) {
+    await new Promise((resolve) => setTimeout(resolve, 500))
+    if (!window.ablyInstance) {
+      console.error('❌ Ably instance not found')
+      return
+    }
+
+    console.log('✅ Ably instance ready:', window.ablyInstance)
+
     unsubscribeFromAbly = onAdminReply(sessionId, handleAdminReply)
 
-    await initializeTyping(window.ablyInstance, `chat-${sessionId}`) // Initialize typing indicator
+    try {
+      await initializeTyping(window.ablyInstance, `chat-${sessionId}`)
+      console.log('✅ Typing indicator initialized for session:', sessionId)
+    } catch (error) {
+      console.error('❌ Failed to initialize typing:', error)
+    }
   }
 })
 
