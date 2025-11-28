@@ -5,11 +5,66 @@ import getUserId from './utils/userId'
 import { useAbly } from '../composables/userAbly'
 // import { useTypingIndicator } from '../composables/useTypingIndicator'
 import { useChatNotifications } from '../composables/useChatNotifications'
+import * as Ably from 'ably'
+import { ChatClient } from '@ably/chat'
 
+// const showTypingDots = ref(false)
 const props = defineProps({
   userId: { type: String, required: true },
   api: { type: String, required: true },
   website: { type: String, required: true },
+})
+
+const typingRealtime = new Ably.Realtime({
+  key: 'your_full_ably_key_here', // ← Use same key as admin (or put in .env)
+  clientId: `user-${sessionId}`, // Important: starts with "user-" so admin knows it's the customer
+})
+
+const typingChatClient = new ChatClient(typingRealtime)
+let userTypingRoom = null
+
+// Join the same typing room as admin: typing:SESSION_ID
+onMounted(async () => {
+  try {
+    userTypingRoom = await typingChatClient.rooms.get(`typing:${sessionId}`, {
+      typing: { heartbeatThrottleMs: 3000 },
+    })
+    await userTypingRoom.attach()
+
+    // Listen for admin typing → show 3 dots
+    userTypingRoom.typing.subscribe((event) => {
+      const adminsTyping = Array.from(event.currentTyping).filter((id) => id.startsWith('admin-'))
+
+      // Update status text or show typing dots
+      if (adminsTyping.length > 0) {
+        statusText.value = 'Admin is typing...'
+        // Or trigger a reactive flag for the dots
+        showTypingDots.value = true
+      } else {
+        showTypingDots.value = false
+        if (isConnected.value) statusText.value = 'Online'
+      }
+    })
+  } catch (err) {
+    console.error('Failed to init user typing room:', err)
+  }
+})
+
+// Send keystroke when user types
+const showTypingDots = ref(false)
+
+watch(newMessage, async (val) => {
+  if (!userTypingRoom?.typing || !val.trim()) return
+
+  await userTypingRoom.typing.keystroke()
+})
+
+// Cleanup
+onBeforeUnmount(() => {
+  if (userTypingRoom) {
+    userTypingRoom.detach()
+  }
+  typingRealtime.close()
 })
 
 const { setUnreadMessage } = useChatNotifications()
@@ -37,10 +92,7 @@ let unsubscribeFromAbly = () => {} // To hold the unsubscribe function
 
 const statusText = computed(() => {
   if (!isConnected.value) return 'Connecting...'
-  // if (isSomeoneTyping.value && typingUsers.value.length > 0) {
-  //   const users = typingUsers.value.join(' and ')
-  //   return `${users} ${typingUsers.value.length === 1 ? 'is' : 'are'} typing...`
-  // }
+  if (showTypingDots.value) return 'Admin is typing...'
   return 'Online'
 })
 
@@ -287,7 +339,8 @@ onBeforeUnmount(() => {
           </div>
         </template>
 
-        <!-- <div v-if="isSomeoneTyping && typingUsers.length > 0" class="message-row admin">
+        <!-- Admin Typing Indicator -->
+        <div v-if="showTypingDots" class="message-row admin">
           <div class="message-bubble admin">
             <div class="typing-indicator">
               <span></span>
@@ -295,7 +348,7 @@ onBeforeUnmount(() => {
               <span></span>
             </div>
           </div>
-        </div> -->
+        </div>
 
         <div v-if="loading" class="loading-state">
           <div class="spinner"></div>
