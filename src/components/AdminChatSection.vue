@@ -3,7 +3,7 @@ import { ref, nextTick, onMounted, onBeforeUnmount, computed } from 'vue'
 import axios from 'axios'
 import getUserId from './utils/userId'
 import { useAbly } from '../composables/userAbly'
-import { useTypingIndicator } from '../composables/useTypingIndicator'
+// import { useTypingIndicator } from '../composables/useTypingIndicator'
 import { useChatNotifications } from '../composables/useChatNotifications'
 
 const props = defineProps({
@@ -18,29 +18,29 @@ const sending = ref(false)
 const loading = ref(false)
 const chatMessages = ref([])
 const newMessage = ref('')
-const isTyping = ref(false)
-let typingTimeout = null
+// const isTyping = ref(false)
+// let typingTimeout = null
 
 // Initialize Ably Composables
 const { initializeAbly, onAdminReply, isConnected, disconnect: disconnectAbly } = useAbly()
 
-const {
-  isTyping: isSomeoneTyping,
-  typingUsers,
-  initializeTyping,
-  startTyping,
-  stopTyping,
-  disconnect: disconnectTyping,
-} = useTypingIndicator()
+// const {
+//   isTyping: isSomeoneTyping,
+//   typingUsers,
+//   initializeTyping,
+//   startTyping,
+//   stopTyping,
+//   disconnect: disconnectTyping,
+// } = useTypingIndicator()
 
 let unsubscribeFromAbly = () => {} // To hold the unsubscribe function
 
 const statusText = computed(() => {
   if (!isConnected.value) return 'Connecting...'
-  if (isSomeoneTyping.value && typingUsers.value.length > 0) {
-    const users = typingUsers.value.join(' and ')
-    return `${users} ${typingUsers.value.length === 1 ? 'is' : 'are'} typing...`
-  }
+  // if (isSomeoneTyping.value && typingUsers.value.length > 0) {
+  //   const users = typingUsers.value.join(' and ')
+  //   return `${users} ${typingUsers.value.length === 1 ? 'is' : 'are'} typing...`
+  // }
   return 'Online'
 })
 
@@ -120,10 +120,10 @@ const sendMessage = async () => {
       sender_type: 'user',
     })
 
-    isTyping.value = true
-    setTimeout(() => {
-      isTyping.value = false
-    }, 3000)
+    // isTyping.value = true
+    // setTimeout(() => {
+    //   isTyping.value = false
+    // }, 3000)
   } catch (err) {
     console.error('Message send failed:', err)
     newMessage.value = messageToSend
@@ -161,7 +161,7 @@ const getMessageAlignment = (msg) => {
 }
 
 const handleAdminReply = async (messageData) => {
-  isTyping.value = false
+  // isTyping.value = false
 
   const adminMessage = {
     message: messageData.message,
@@ -179,20 +179,20 @@ const handleAdminReply = async (messageData) => {
   setUnreadMessage(true)
 }
 
-const handleTyping = () => {
-  if (isConnected.value) {
-    startTyping()
+// const handleTyping = () => {
+//   if (isConnected.value) {
+//     startTyping()
 
-    // Reset timeout
-    if (typingTimeout) {
-      clearTimeout(typingTimeout)
-    }
+//     // Reset timeout
+//     if (typingTimeout) {
+//       clearTimeout(typingTimeout)
+//     }
 
-    typingTimeout = setTimeout(() => {
-      stopTyping() // Explicitly stop typing after 3 seconds of inactivity
-    }, 3000)
-  }
-}
+//     typingTimeout = setTimeout(() => {
+//       stopTyping() // Explicitly stop typing after 3 seconds of inactivity
+//     }, 3000)
+//   }
+// }
 
 onMounted(async () => {
   const stored = localStorage.getItem(`chatMessages_${props.userId}`)
@@ -230,21 +230,21 @@ onMounted(async () => {
 
     unsubscribeFromAbly = onAdminReply(sessionId, handleAdminReply)
 
-    try {
-      // Already correct
-      await initializeTyping(window.ablyInstance, `chat-${sessionId}`)
-      console.log('✅ Typing indicator initialized for session:', sessionId)
-    } catch (error) {
-      console.error('❌ Failed to initialize typing:', error)
-    }
+    // try {
+    //   // Already correct
+    //   await initializeTyping(window.ablyInstance, `chat-${sessionId}`)
+    //   console.log('✅ Typing indicator initialized for session:', sessionId)
+    // } catch (error) {
+    //   console.error('❌ Failed to initialize typing:', error)
+    // }
   }
 })
 
 onBeforeUnmount(() => {
   unsubscribeFromAbly()
   disconnectAbly()
-  disconnectTyping()
-  if (typingTimeout) clearTimeout(typingTimeout)
+  // disconnectTyping()
+  // if (typingTimeout) clearTimeout(typingTimeout)
 })
 </script>
 
@@ -287,7 +287,7 @@ onBeforeUnmount(() => {
           </div>
         </template>
 
-        <div v-if="isSomeoneTyping && typingUsers.length > 0" class="message-row admin">
+        <!-- <div v-if="isSomeoneTyping && typingUsers.length > 0" class="message-row admin">
           <div class="message-bubble admin">
             <div class="typing-indicator">
               <span></span>
@@ -295,7 +295,7 @@ onBeforeUnmount(() => {
               <span></span>
             </div>
           </div>
-        </div>
+        </div> -->
 
         <div v-if="loading" class="loading-state">
           <div class="spinner"></div>
@@ -323,7 +323,6 @@ onBeforeUnmount(() => {
     <div class="input-wrapper">
       <input
         v-model="newMessage"
-        @keydown="handleTyping"
         @keyup.enter="sendMessage"
         type="text"
         placeholder="Type a message..."
