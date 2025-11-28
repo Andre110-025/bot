@@ -42,12 +42,18 @@ let typingChatClient = null
 // const typingChatClient = new ChatClient(typingRealtime)
 
 // Join the same typing room as admin: typing:SESSION_ID
+const ABLY_AUTH_URL = 'https://assitance.storehive.com.ng/public/api/ably/auth'
+
 onMounted(async () => {
   try {
     typingRealtime = new Ably.Realtime({
-      key: import.meta.env.VITE_ABLY_KEY || 'your_full_ably_key_here', // ← use .env!
-      clientId: `user-${sessionId}`, // ← now sessionId exists!
+      authUrl: ABLY_AUTH_URL, // ← Your backend token endpoint
+      authMethod: 'GET',
+      authParams: { session_id: sessionId }, // ← sends sessionId to backend
+      clientId: `user-${sessionId}`, // ← important for typing detection
     })
+
+    await typingRealtime.connection.once('connected')
 
     typingChatClient = new ChatClient(typingRealtime)
 
@@ -57,19 +63,15 @@ onMounted(async () => {
 
     await userTypingRoom.attach()
 
+    // Listen for admin typing → show dots
     userTypingRoom.typing.subscribe((event) => {
       const adminsTyping = Array.from(event.currentTyping).filter((id) => id.startsWith('admin-'))
-
-      if (adminsTyping.length > 0) {
-        showTypingDots.value = true
-      } else {
-        showTypingDots.value = false
-      }
+      showTypingDots.value = adminsTyping.length > 0
     })
 
-    console.log('User typing indicator ready!')
+    console.log('Typing indicator connected securely!')
   } catch (err) {
-    console.error('Typing init failed:', err)
+    console.error('Typing connection failed:', err)
   }
 })
 
@@ -81,7 +83,7 @@ watch(newMessage, async (val) => {
   try {
     await userTypingRoom.typing.keystroke()
   } catch (err) {
-    console.warn('Failed to send keystroke:', err)
+    // ignore occasional errors – they don't break UX
   }
 })
 
