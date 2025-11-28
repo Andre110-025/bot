@@ -220,13 +220,13 @@ onMounted(async () => {
   // Initialize Ably
   const isAblyInitialized = await initializeAbly()
   if (isAblyInitialized) {
-    await new Promise((resolve) => setTimeout(resolve, 500))
-    if (!window.ablyInstance) {
-      console.error('❌ Ably instance not found')
-      return
-    }
+    // await new Promise((resolve) => setTimeout(resolve, 500))
+    // if (!window.ablyInstance) {
+    //   console.error('❌ Ably instance not found')
+    //   return
+    // }
 
-    console.log('✅ Ably instance ready:', window.ablyInstance)
+    // console.log('✅ Ably instance ready:', window.ablyInstance)
 
     unsubscribeFromAbly = onAdminReply(sessionId, handleAdminReply)
 
