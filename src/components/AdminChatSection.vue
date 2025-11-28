@@ -4,12 +4,15 @@ import axios from 'axios'
 import getUserId from './utils/userId'
 import { useAbly } from '../composables/userAbly'
 import { useTypingIndicator } from '../composables/useTypingIndicator'
+import { useChatNotifications } from '../composables/useChatNotifications'
 
 const props = defineProps({
   userId: { type: String, required: true },
   api: { type: String, required: true },
   website: { type: String, required: true },
 })
+
+const { setUnreadMessage } = useChatNotifications()
 
 const sending = ref(false)
 const loading = ref(false)
@@ -172,6 +175,8 @@ const handleAdminReply = async (messageData) => {
   saveMessages()
   await nextTick()
   scrollToBottom()
+
+  setUnreadMessage(true)
 }
 
 const handleTyping = () => {

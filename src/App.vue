@@ -6,6 +6,7 @@ import AdminChatSection from './components/AdminChatSection.vue'
 import getUserId from './components/utils/userId'
 import { marked } from 'marked'
 import DOMPurify from 'dompurify'
+import { useChatNotifications } from './composables/useChatNotifications'
 // nextTick: waits for the DOM to update after a reactive change.
 const showPopup = ref(false)
 const userInput = ref('')
@@ -33,6 +34,7 @@ const props = defineProps({
   },
 })
 
+const { hasUnreadMessages, unreadCount, clearUnreadMessages } = useChatNotifications()
 const userId = ref(localStorage.getItem('userId') || '')
 
 onMounted(() => {
@@ -53,6 +55,9 @@ onMounted(() => {
 
 const togglePopup = () => {
   showPopup.value = !showPopup.value
+  if (showPopup.value) {
+    clearUnreadMessages()
+  }
 }
 
 const formatMessage = (text) => {
@@ -362,8 +367,8 @@ onBeforeUnmount(() => {
               d="M2 22V9q0-.825.588-1.413Q3.175 7 4 7h2V4q0-.825.588-1.413Q7.175 2 8 2h12q.825 0 1.413.587Q22 3.175 22 4v8q0 .825-.587 1.412Q20.825 14 20 14h-2v3q0 .825-.587 1.413Q16.825 19 16 19H5Zm6-10h8V9H8Zm-4 5h12v-3H8q-.825 0-1.412-.588Q6 12.825 6 12V9H4Zm14-5h2V4H8v3h8q.825 0 1.413.587Q18 8.175 18 9Z"
             />
           </svg>
-          <span class="cdUser011011-ping"></span>
-          <span class="cdUser011011-ping-static"></span>
+          <span v-if="hasUnreadMessages" class="cdUser011011-ping"></span>
+          <span v-if="hasUnreadMessages" class="cdUser011011-ping-static"></span>
         </div>
 
         <transition name="cdUser011011-fade">
