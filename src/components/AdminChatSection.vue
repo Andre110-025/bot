@@ -1,5 +1,5 @@
 <script setup>
-import { ref, nextTick, onMounted, onBeforeUnmount, computed } from 'vue'
+import { ref, nextTick, onMounted, onBeforeUnmount, computed, watch } from 'vue'
 import axios from 'axios'
 import getUserId from './utils/userId'
 import { useAbly } from '../composables/userAbly'
@@ -15,64 +15,82 @@ const props = defineProps({
   website: { type: String, required: true },
 })
 
-const typingRealtime = new Ably.Realtime({
-  key: 'your_full_ably_key_here', // ← Use same key as admin (or put in .env)
-  clientId: `user-${sessionId}`, // Important: starts with "user-" so admin knows it's the customer
-})
-
-const typingChatClient = new ChatClient(typingRealtime)
-let userTypingRoom = null
-
-// Join the same typing room as admin: typing:SESSION_ID
-onMounted(async () => {
-  try {
-    userTypingRoom = await typingChatClient.rooms.get(`typing:${sessionId}`, {
-      typing: { heartbeatThrottleMs: 3000 },
-    })
-    await userTypingRoom.attach()
-
-    // Listen for admin typing → show 3 dots
-    userTypingRoom.typing.subscribe((event) => {
-      const adminsTyping = Array.from(event.currentTyping).filter((id) => id.startsWith('admin-'))
-
-      // Update status text or show typing dots
-      if (adminsTyping.length > 0) {
-        statusText.value = 'Admin is typing...'
-        // Or trigger a reactive flag for the dots
-        showTypingDots.value = true
-      } else {
-        showTypingDots.value = false
-        if (isConnected.value) statusText.value = 'Online'
-      }
-    })
-  } catch (err) {
-    console.error('Failed to init user typing room:', err)
-  }
-})
-
-// Send keystroke when user types
-const showTypingDots = ref(false)
-
-watch(newMessage, async (val) => {
-  if (!userTypingRoom?.typing || !val.trim()) return
-
-  await userTypingRoom.typing.keystroke()
-})
-
-// Cleanup
-onBeforeUnmount(() => {
-  if (userTypingRoom) {
-    userTypingRoom.detach()
-  }
-  typingRealtime.close()
-})
-
 const { setUnreadMessage } = useChatNotifications()
 
 const sending = ref(false)
 const loading = ref(false)
 const chatMessages = ref([])
 const newMessage = ref('')
+
+const showTypingDots = ref(false)
+const cleanWebsite = props.website
+  .replace(/^https?:\/\//, '')
+  .replace(/^www\./, '')
+  .split('/')[0]
+
+const sessionId = getUserId(cleanWebsite)
+
+let userTypingRoom = null
+let typingRealtime = null
+let typingChatClient = null
+
+// const typingRealtime = new Ably.Realtime({
+//   key: 'your_full_ably_key_here', // ← Use same key as admin (or put in .env)
+//   clientId: `user-${sessionId}`, // Important: starts with "user-" so admin knows it's the customer
+// })
+
+// const typingChatClient = new ChatClient(typingRealtime)
+
+// Join the same typing room as admin: typing:SESSION_ID
+onMounted(async () => {
+  try {
+    typingRealtime = new Ably.Realtime({
+      key: import.meta.env.VITE_ABLY_KEY || 'your_full_ably_key_here', // ← use .env!
+      clientId: `user-${sessionId}`, // ← now sessionId exists!
+    })
+
+    typingChatClient = new ChatClient(typingRealtime)
+
+    userTypingRoom = await typingChatClient.rooms.get(`typing:${sessionId}`, {
+      typing: { heartbeatThrottleMs: 3000 },
+    })
+
+    await userTypingRoom.attach()
+
+    userTypingRoom.typing.subscribe((event) => {
+      const adminsTyping = Array.from(event.currentTyping).filter((id) => id.startsWith('admin-'))
+
+      if (adminsTyping.length > 0) {
+        showTypingDots.value = true
+      } else {
+        showTypingDots.value = false
+      }
+    })
+
+    console.log('User typing indicator ready!')
+  } catch (err) {
+    console.error('Typing init failed:', err)
+  }
+})
+
+// Send keystroke when user types
+// const showTypingDots = ref(false)
+
+watch(newMessage, async (val) => {
+  if (!userTypingRoom?.typing || !val.trim()) return
+  try {
+    await userTypingRoom.typing.keystroke()
+  } catch (err) {
+    console.warn('Failed to send keystroke:', err)
+  }
+})
+
+// Cleanup
+onBeforeUnmount(() => {
+  if (userTypingRoom) userTypingRoom.detach()
+  if (typingRealtime) typingRealtime.close()
+})
+
 // const isTyping = ref(false)
 // let typingTimeout = null
 
@@ -96,11 +114,6 @@ const statusText = computed(() => {
   return 'Online'
 })
 
-const cleanWebsite = props.website
-  .replace(/^https?:\/\//, '')
-  .replace(/^www\./, '')
-  .split('/')[0]
-
 const saveMessages = () => {
   if (!props.userId) return
   const payload = {
@@ -109,8 +122,6 @@ const saveMessages = () => {
   }
   localStorage.setItem(`chatMessages_${props.userId}`, JSON.stringify(payload))
 }
-
-const sessionId = getUserId(cleanWebsite)
 
 const fetchInitialMessages = async () => {
   if (!cleanWebsite) return
