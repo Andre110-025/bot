@@ -48,7 +48,7 @@ onMounted(async () => {
   try {
     typingRealtime = new Ably.Realtime({
       authUrl: ABLY_AUTH_URL, // ← Your backend token endpoint
-      authMethod: 'GET',
+      authMethod: 'POST',
       authParams: { session_id: sessionId }, // ← sends sessionId to backend
       clientId: `user-${sessionId}`, // ← important for typing detection
     })
