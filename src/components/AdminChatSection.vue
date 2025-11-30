@@ -43,17 +43,34 @@ let typingChatClient = null
 
 // Join the same typing room as admin: typing:SESSION_ID
 const ABLY_AUTH_URL = 'https://assitance.storehive.com.ng/public/api/ably/auth'
-
 onMounted(async () => {
   try {
     typingRealtime = new Ably.Realtime({
-      authUrl: ABLY_AUTH_URL, // ← Your backend token endpoint
-      authMethod: 'POST',
-      authParams: { session_id: sessionId }, // ← sends sessionId to backend
-      clientId: `user-${sessionId}`, // ← important for typing detection
+      clientId: `user-${sessionId}`,
+
+      // This bypasses your wrapped backend response completely
+      authCallback: async (tokenParams, callback) => {
+        try {
+          const response = await fetch(ABLY_AUTH_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ session_id: sessionId }),
+          })
+
+          const json = await response.json()
+
+          // Your backend returns: { success: true, data: { ...tokenRequest } }
+          // We extract the real token request
+          callback(null, json.data)
+        } catch (err) {
+          console.error('Token request failed:', err)
+          callback(err)
+        }
+      },
     })
 
     await typingRealtime.connection.once('connected')
+    console.log('Typing connection established (securely!)')
 
     typingChatClient = new ChatClient(typingRealtime)
 
@@ -63,17 +80,47 @@ onMounted(async () => {
 
     await userTypingRoom.attach()
 
-    // Listen for admin typing → show dots
+    // Show dots when admin types
     userTypingRoom.typing.subscribe((event) => {
       const adminsTyping = Array.from(event.currentTyping).filter((id) => id.startsWith('admin-'))
       showTypingDots.value = adminsTyping.length > 0
     })
 
-    console.log('Typing indicator connected securely!')
+    console.log('Typing indicator ready — dots will appear when admin types!')
   } catch (err) {
-    console.error('Typing connection failed:', err)
+    console.error('Failed to connect typing indicator:', err)
   }
 })
+// onMounted(async () => {
+//   try {
+//     typingRealtime = new Ably.Realtime({
+//       authUrl: ABLY_AUTH_URL, // ← Your backend token endpoint
+//       authMethod: 'POST',
+//       authParams: { session_id: sessionId }, // ← sends sessionId to backend
+//       clientId: `user-${sessionId}`, // ← important for typing detection
+//     })
+
+//     await typingRealtime.connection.once('connected')
+
+//     typingChatClient = new ChatClient(typingRealtime)
+
+//     userTypingRoom = await typingChatClient.rooms.get(`typing:${sessionId}`, {
+//       typing: { heartbeatThrottleMs: 3000 },
+//     })
+
+//     await userTypingRoom.attach()
+
+//     // Listen for admin typing → show dots
+//     userTypingRoom.typing.subscribe((event) => {
+//       const adminsTyping = Array.from(event.currentTyping).filter((id) => id.startsWith('admin-'))
+//       showTypingDots.value = adminsTyping.length > 0
+//     })
+
+//     console.log('Typing indicator connected securely!')
+//   } catch (err) {
+//     console.error('Typing connection failed:', err)
+//   }
+// })
 
 // Send keystroke when user types
 // const showTypingDots = ref(false)
