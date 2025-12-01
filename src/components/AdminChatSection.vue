@@ -125,13 +125,37 @@ onMounted(async () => {
 // Send keystroke when user types
 // const showTypingDots = ref(false)
 
+let typingTimeout = null
+
 watch(newMessage, async (val) => {
-  if (!userTypingRoom?.typing || !val.trim()) return
+  if (!userTypingRoom?.typing) return
+
+  clearTimeout(typingTimeout)
+
+  if (!val.trim()) {
+    // Stop typing when input is empty
+    try {
+      await userTypingRoom.typing.stop()
+    } catch (err) {
+      /* ignore */
+    }
+    return
+  }
+
   try {
     await userTypingRoom.typing.keystroke()
   } catch (err) {
-    // ignore occasional errors – they don't break UX
+    /* ignore */
   }
+
+  // Auto-stop after 3 seconds of no typing
+  typingTimeout = setTimeout(async () => {
+    try {
+      await userTypingRoom.typing.stop()
+    } catch (err) {
+      /* ignore */
+    }
+  }, 3000)
 })
 
 // Cleanup
@@ -208,6 +232,14 @@ const sendMessage = async () => {
 
   const messageToSend = newMessage.value.trim()
   newMessage.value = ''
+
+  if (userTypingRoom?.typing) {
+    try {
+      await userTypingRoom.typing.stop()
+    } catch (err) {
+      /* ignore */
+    }
+  }
 
   try {
     sending.value = true
