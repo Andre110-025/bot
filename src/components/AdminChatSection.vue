@@ -1,14 +1,10 @@
 <script setup>
-import { ref, nextTick, onMounted, onBeforeUnmount, computed, watch } from 'vue'
+import { ref, nextTick, onMounted, onBeforeUnmount, computed } from 'vue'
 import axios from 'axios'
 import getUserId from './utils/userId'
 import { useAbly } from '../composables/userAbly'
-// import { useTypingIndicator } from '../composables/useTypingIndicator'
 import { useChatNotifications } from '../composables/useChatNotifications'
-import * as Ably from 'ably'
-import { ChatClient } from '@ably/chat'
 
-// const showTypingDots = ref(false)
 const props = defineProps({
   userId: { type: String, required: true },
   api: { type: String, required: true },
@@ -22,7 +18,6 @@ const loading = ref(false)
 const chatMessages = ref([])
 const newMessage = ref('')
 
-const showTypingDots = ref(false)
 const cleanWebsite = props.website
   .replace(/^https?:\/\//, '')
   .replace(/^www\./, '')
@@ -30,160 +25,13 @@ const cleanWebsite = props.website
 
 const sessionId = getUserId(cleanWebsite)
 
-let userTypingRoom = null
-let typingRealtime = null
-let typingChatClient = null
-
-// const typingRealtime = new Ably.Realtime({
-//   key: 'your_full_ably_key_here', // ← Use same key as admin (or put in .env)
-//   clientId: `user-${sessionId}`, // Important: starts with "user-" so admin knows it's the customer
-// })
-
-// const typingChatClient = new ChatClient(typingRealtime)
-
-// Join the same typing room as admin: typing:SESSION_ID
-const ABLY_AUTH_URL = 'https://assitance.storehive.com.ng/public/api/ably/auth'
-onMounted(async () => {
-  try {
-    typingRealtime = new Ably.Realtime({
-      clientId: `user-${sessionId}`,
-
-      // This bypasses your wrapped backend response completely
-      authCallback: async (tokenParams, callback) => {
-        try {
-          const response = await fetch(ABLY_AUTH_URL, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ session_id: sessionId }),
-          })
-
-          const json = await response.json()
-
-          // Your backend returns: { success: true, data: { ...tokenRequest } }
-          // We extract the real token request
-          callback(null, json.data)
-        } catch (err) {
-          console.error('Token request failed:', err)
-          callback(err)
-        }
-      },
-    })
-
-    await typingRealtime.connection.once('connected')
-    console.log('Typing connection established (securely!)')
-
-    typingChatClient = new ChatClient(typingRealtime)
-
-    userTypingRoom = await typingChatClient.rooms.get(`typing:${sessionId}`, {
-      typing: { heartbeatThrottleMs: 3000 },
-    })
-
-    await userTypingRoom.attach()
-
-    // Show dots when admin types
-    userTypingRoom.typing.subscribe((event) => {
-      const adminsTyping = Array.from(event.currentTyping).filter((id) => id.startsWith('admin-'))
-      showTypingDots.value = adminsTyping.length > 0
-    })
-
-    console.log('Typing indicator ready — dots will appear when admin types!')
-  } catch (err) {
-    console.error('Failed to connect typing indicator:', err)
-  }
-})
-// onMounted(async () => {
-//   try {
-//     typingRealtime = new Ably.Realtime({
-//       authUrl: ABLY_AUTH_URL, // ← Your backend token endpoint
-//       authMethod: 'POST',
-//       authParams: { session_id: sessionId }, // ← sends sessionId to backend
-//       clientId: `user-${sessionId}`, // ← important for typing detection
-//     })
-
-//     await typingRealtime.connection.once('connected')
-
-//     typingChatClient = new ChatClient(typingRealtime)
-
-//     userTypingRoom = await typingChatClient.rooms.get(`typing:${sessionId}`, {
-//       typing: { heartbeatThrottleMs: 3000 },
-//     })
-
-//     await userTypingRoom.attach()
-
-//     // Listen for admin typing → show dots
-//     userTypingRoom.typing.subscribe((event) => {
-//       const adminsTyping = Array.from(event.currentTyping).filter((id) => id.startsWith('admin-'))
-//       showTypingDots.value = adminsTyping.length > 0
-//     })
-
-//     console.log('Typing indicator connected securely!')
-//   } catch (err) {
-//     console.error('Typing connection failed:', err)
-//   }
-// })
-
-// Send keystroke when user types
-// const showTypingDots = ref(false)
-
-let typingTimeout = null
-
-watch(newMessage, async (val) => {
-  if (!userTypingRoom?.typing) return
-
-  clearTimeout(typingTimeout)
-
-  if (!val.trim()) {
-    // Stop typing when input is empty
-    try {
-      await userTypingRoom.typing.stop()
-    } catch (err) {
-      /* ignore */
-    }
-    return
-  }
-
-  try {
-    await userTypingRoom.typing.keystroke()
-  } catch (err) {
-    /* ignore */
-  }
-
-  // Auto-stop after 3 seconds of no typing
-  typingTimeout = setTimeout(async () => {
-    try {
-      await userTypingRoom.typing.stop()
-    } catch (err) {
-      /* ignore */
-    }
-  }, 3000)
-})
-
-// Cleanup
-onBeforeUnmount(() => {
-  if (userTypingRoom) userTypingRoom.detach()
-  if (typingRealtime) typingRealtime.close()
-})
-
-// const isTyping = ref(false)
-// let typingTimeout = null
-
 // Initialize Ably Composables
 const { initializeAbly, onAdminReply, isConnected, disconnect: disconnectAbly } = useAbly()
-
-// const {
-//   isTyping: isSomeoneTyping,
-//   typingUsers,
-//   initializeTyping,
-//   startTyping,
-//   stopTyping,
-//   disconnect: disconnectTyping,
-// } = useTypingIndicator()
 
 let unsubscribeFromAbly = () => {} // To hold the unsubscribe function
 
 const statusText = computed(() => {
   if (!isConnected.value) return 'Connecting...'
-  if (showTypingDots.value) return 'Admin is typing...'
   return 'Online'
 })
 
@@ -233,14 +81,6 @@ const sendMessage = async () => {
   const messageToSend = newMessage.value.trim()
   newMessage.value = ''
 
-  if (userTypingRoom?.typing) {
-    try {
-      await userTypingRoom.typing.stop()
-    } catch (err) {
-      /* ignore */
-    }
-  }
-
   try {
     sending.value = true
 
@@ -263,11 +103,6 @@ const sendMessage = async () => {
       website: props.website,
       sender_type: 'user',
     })
-
-    // isTyping.value = true
-    // setTimeout(() => {
-    //   isTyping.value = false
-    // }, 3000)
   } catch (err) {
     console.error('Message send failed:', err)
     newMessage.value = messageToSend
@@ -305,8 +140,6 @@ const getMessageAlignment = (msg) => {
 }
 
 const handleAdminReply = async (messageData) => {
-  // isTyping.value = false
-
   const adminMessage = {
     message: messageData.message,
     sender: 'admin',
@@ -322,21 +155,6 @@ const handleAdminReply = async (messageData) => {
 
   setUnreadMessage(true)
 }
-
-// const handleTyping = () => {
-//   if (isConnected.value) {
-//     startTyping()
-
-//     // Reset timeout
-//     if (typingTimeout) {
-//       clearTimeout(typingTimeout)
-//     }
-
-//     typingTimeout = setTimeout(() => {
-//       stopTyping() // Explicitly stop typing after 3 seconds of inactivity
-//     }, 3000)
-//   }
-// }
 
 onMounted(async () => {
   const stored = localStorage.getItem(`chatMessages_${props.userId}`)
@@ -364,31 +182,13 @@ onMounted(async () => {
   // Initialize Ably
   const isAblyInitialized = await initializeAbly()
   if (isAblyInitialized) {
-    // await new Promise((resolve) => setTimeout(resolve, 500))
-    // if (!window.ablyInstance) {
-    //   console.error('❌ Ably instance not found')
-    //   return
-    // }
-
-    // console.log('✅ Ably instance ready:', window.ablyInstance)
-
     unsubscribeFromAbly = onAdminReply(sessionId, handleAdminReply)
-
-    // try {
-    //   // Already correct
-    //   await initializeTyping(window.ablyInstance, `chat-${sessionId}`)
-    //   console.log('✅ Typing indicator initialized for session:', sessionId)
-    // } catch (error) {
-    //   console.error('❌ Failed to initialize typing:', error)
-    // }
   }
 })
 
 onBeforeUnmount(() => {
   unsubscribeFromAbly()
   disconnectAbly()
-  // disconnectTyping()
-  // if (typingTimeout) clearTimeout(typingTimeout)
 })
 </script>
 
@@ -430,17 +230,6 @@ onBeforeUnmount(() => {
             </div>
           </div>
         </template>
-
-        <!-- Admin Typing Indicator -->
-        <div v-if="showTypingDots" class="message-row admin">
-          <div class="message-bubble admin">
-            <div class="typing-indicator">
-              <span></span>
-              <span></span>
-              <span></span>
-            </div>
-          </div>
-        </div>
 
         <div v-if="loading" class="loading-state">
           <div class="spinner"></div>
@@ -662,42 +451,6 @@ onBeforeUnmount(() => {
   opacity: 0.6;
   display: block;
   margin-top: 2px;
-}
-
-/* Typing Indicator */
-.typing-indicator {
-  display: flex;
-  gap: 4px;
-  padding: 4px 0;
-}
-
-.typing-indicator span {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: #9ca3af;
-  animation: typing 1.4s infinite ease-in-out;
-}
-
-.typing-indicator span:nth-child(1) {
-  animation-delay: -0.32s;
-}
-
-.typing-indicator span:nth-child(2) {
-  animation-delay: -0.16s;
-}
-
-@keyframes typing {
-  0%,
-  60%,
-  100% {
-    transform: translateY(0);
-    opacity: 0.5;
-  }
-  30% {
-    transform: translateY(-6px);
-    opacity: 1;
-  }
 }
 
 /* Loading State */
