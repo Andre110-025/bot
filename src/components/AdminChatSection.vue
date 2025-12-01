@@ -17,6 +17,9 @@ const sending = ref(false)
 const loading = ref(false)
 const chatMessages = ref([])
 const newMessage = ref('')
+const isAdminTyping = ref(false)
+let typingUnsubscribe = null
+let inputTypingTimeout = null
 
 const cleanWebsite = props.website
   .replace(/^https?:\/\//, '')
@@ -26,7 +29,14 @@ const cleanWebsite = props.website
 const sessionId = getUserId(cleanWebsite)
 
 // Initialize Ably Composables
-const { initializeAbly, onAdminReply, isConnected, disconnect: disconnectAbly } = useAbly()
+const {
+  initializeAbly,
+  onAdminReply,
+  isConnected,
+  sendTypingIndicator,
+  onAdminTyping,
+  disconnect: disconnectAbly,
+} = useAbly()
 
 let unsubscribeFromAbly = () => {} // To hold the unsubscribe function
 
@@ -80,6 +90,9 @@ const sendMessage = async () => {
 
   const messageToSend = newMessage.value.trim()
   newMessage.value = ''
+
+  if (inputTypingTimeout) clearTimeout(inputTypingTimeout)
+  sendTypingIndicator(sessionId, false)
 
   try {
     sending.value = true
@@ -156,6 +169,16 @@ const handleAdminReply = async (messageData) => {
   setUnreadMessage(true)
 }
 
+const handleInputChange = () => {
+  sendTypingIndicator(sessionId, true)
+
+  if (inputTypingTimeout) clearTimeout(inputTypingTimeout)
+
+  inputTypingTimeout = setTimeout(() => {
+    sendTypingIndicator(sessionId, false)
+  }, 1000)
+}
+
 onMounted(async () => {
   const stored = localStorage.getItem(`chatMessages_${props.userId}`)
   const oneDay = 1 * 24 * 60 * 60 * 1000
@@ -183,12 +206,21 @@ onMounted(async () => {
   const isAblyInitialized = await initializeAbly()
   if (isAblyInitialized) {
     unsubscribeFromAbly = onAdminReply(sessionId, handleAdminReply)
+
+    typingUnsubscribe = onAdminTyping(sessionId, (isTyping) => {
+      isAdminTyping.value = isTyping
+      if (isTyping) {
+        nextTick(() => scrollToBottom())
+      }
+    })
   }
 })
 
 onBeforeUnmount(() => {
   unsubscribeFromAbly()
   disconnectAbly()
+  if (typingUnsubscribe) typingUnsubscribe()
+  if (inputTypingTimeout) clearTimeout(inputTypingTimeout)
 })
 </script>
 
@@ -229,6 +261,14 @@ onBeforeUnmount(() => {
               <span class="time">{{ formatTime(msg.timestamp) }}</span>
             </div>
           </div>
+
+          <div v-if="isAdminTyping" class="message-row admin">
+            <div class="typing-indicator">
+              <span></span>
+              <span></span>
+              <span></span>
+            </div>
+          </div>
         </template>
 
         <div v-if="loading" class="loading-state">
@@ -258,6 +298,7 @@ onBeforeUnmount(() => {
       <input
         v-model="newMessage"
         @keyup.enter="sendMessage"
+        @input="handleInputChange"
         type="text"
         placeholder="Type a message..."
         :disabled="sending || !isConnected"
@@ -290,8 +331,47 @@ onBeforeUnmount(() => {
 </template>
 
 <style scoped>
-* {
-  box-sizing: border-box;
+.typing-indicator {
+  display: flex;
+  gap: 4px;
+  padding: 12px 16px;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 18px;
+  border-bottom-left-radius: 4px;
+}
+
+.typing-indicator span {
+  width: 8px;
+  height: 8px;
+  background: #9ca3af;
+  border-radius: 50%;
+  animation: typing-bounce 1.4s infinite ease-in-out;
+}
+
+.typing-indicator span:nth-child(1) {
+  animation-delay: 0s;
+}
+
+.typing-indicator span:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.typing-indicator span:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+@keyframes typing-bounce {
+  0%,
+  60%,
+  100% {
+    transform: translateY(0);
+    opacity: 0.7;
+  }
+  30% {
+    transform: translateY(-10px);
+    opacity: 1;
+  }
 }
 
 .chat-container {

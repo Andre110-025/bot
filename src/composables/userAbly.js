@@ -1,4 +1,3 @@
-// src/composables/useAbly.js (User/Chatbot Side - FIXED)
 import { ref, readonly } from 'vue'
 import * as Ably from 'ably'
 
@@ -10,13 +9,10 @@ const ABLY_AUTH_URL = 'https://assitance.storehive.com.ng/public/api/ably/auth'
 export function useAbly() {
   const initializeAbly = async () => {
     if (ablyService.value) {
-      // console.log('Ably already initialized')
       return true
     }
 
     try {
-      // console.log('🔄 Initializing Ably connection...')
-
       const res = await fetch(ABLY_AUTH_URL, {
         method: 'POST',
         credentials: 'include',
@@ -47,16 +43,16 @@ export function useAbly() {
       })
 
       ably.connection.on('connected', () => {
-        // console.log('✅ Ably CONNECTED (User)')
+        console.log('✅ Ably CONNECTED (User)')
         isConnected.value = true
       })
 
       ably.connection.on('connecting', () => {
-        // console.log('🔄 Ably connecting...')
+        console.log('🔄 Ably connecting...')
       })
 
       ably.connection.on('disconnected', () => {
-        // console.log('⚠️ Ably disconnected')
+        console.log('⚠️ Ably disconnected')
         isConnected.value = false
       })
 
@@ -73,10 +69,8 @@ export function useAbly() {
     }
   }
 
-  // ✅ FIXED: User-side onAdminReply function
   const onAdminReply = (sessionId, callback) => {
     if (!ablyService.value) {
-      // console.error('❌ Cannot subscribe: Ably not initialized')
       return () => {}
     }
 
@@ -84,61 +78,38 @@ export function useAbly() {
       const channel = ablyService.value.channels.get('chat-messages')
 
       const handler = (msg) => {
-        // console.log('🔔 USER RAW ABLY MESSAGE:', {
-        //   channel: 'chat-messages',
-        //   eventName: msg.name,
-        //   data: msg.data,
-        //   timestamp: msg.timestamp,
-        // })
-
-        // ✅ FIXED: Check msg.name (not msg.data.event_type)
         if (msg.name === 'new.message' && msg.data) {
-          // console.log('📩 Potential message detected:', msg.data)
-
-          // ✅ FIXED: Add session ID normalization and better debugging
           const msgSession = String(msg.data.session_id).trim()
           const mySession = String(sessionId).trim()
 
-          // console.log('🔍 Session ID Comparison:', {
-          //   msgSession,
-          //   mySession,
-          //   match: msgSession === mySession,
-          //   senderType: msg.data.sender_type,
-          //   shouldProcess: msgSession === mySession && msg.data.sender_type === 'admin',
-          // })
+          console.log('🔍 Session ID Comparison:', {
+            msgSession,
+            mySession,
+            match: msgSession === mySession,
+            senderType: msg.data.sender_type,
+          })
 
-          // ✅ FIXED: Filter for this user's session and admin messages
           if (msgSession === mySession && msg.data.sender_type === 'admin') {
-            // console.log('🎯 ✅ ADMIN MESSAGE FOR ME! Processing...', msg.data)
+            console.log('✅ ADMIN MESSAGE FOR ME!', msg.data)
             callback(msg.data)
-          } else {
-            // console.log('⚠️ Message not for me:', {
-            //   mySession,
-            //   msgSession,
-            //   sender: msg.data.sender_type,
-            //   reason: msgSession !== mySession ? 'session_mismatch' : 'not_admin_message',
-            // })
           }
         }
       }
 
-      // Add channel state monitoring
       channel.on('attached', () => {
-        // console.log(`✅ Channel 'chat-messages' attached for user session: ${sessionId}`)
+        console.log(`✅ Channel 'chat-messages' attached for session: ${sessionId}`)
       })
 
       channel.on('failed', (stateChange) => {
-        // console.error(`❌ Channel 'chat-messages' failed:`, stateChange)
+        console.error(`❌ Channel 'chat-messages' failed:`, stateChange)
       })
 
       channel.subscribe(handler)
-      // console.log(
-      //   `✅ Listening for admin replies on session: ${sessionId} (channel: chat-messages)`,
-      // )
+      console.log(`✅ Listening for admin replies on session: ${sessionId}`)
 
       return () => {
         channel.unsubscribe(handler)
-        // console.log(`🔕 Stopped listening to session: ${sessionId}`)
+        console.log(`🔕 Stopped listening to session: ${sessionId}`)
       }
     } catch (err) {
       console.error('❌ Subscribe error:', err)
@@ -156,18 +127,86 @@ export function useAbly() {
       const channel = ablyService.value.channels.get(channelName)
 
       channel.subscribe((msg) => {
-        // console.log(`📩 Message on [${channelName}]:`, msg.name, msg.data)
         callback(msg)
       })
 
-      // console.log(`✅ Subscribed to channel: ${channelName}`)
+      console.log(`✅ Subscribed to channel: ${channelName}`)
 
       return () => {
         channel.unsubscribe()
-        // console.log(`🔕 Unsubscribed from channel: ${channelName}`)
+        console.log(`🔕 Unsubscribed from channel: ${channelName}`)
       }
     } catch (err) {
       console.error(`❌ Subscribe error on ${channelName}:`, err)
+      return () => {}
+    }
+  }
+
+  // ✅ FIXED: Get channel properly
+  const sendTypingIndicator = (sessionId, isTyping) => {
+    if (!ablyService.value) {
+      console.warn('Cannot send typing indicator: Ably not initialized')
+      return
+    }
+
+    try {
+      // ✅ Get channel from ablyService
+      const channel = ablyService.value.channels.get('typing-indicator')
+
+      channel.publish('typing', {
+        session_id: sessionId,
+        sender_type: 'user',
+        is_typing: isTyping,
+        timestamp: new Date().toISOString(),
+      })
+
+      console.log('📤 User typing indicator sent:', { sessionId, isTyping })
+    } catch (err) {
+      console.error('Failed to send typing indicator:', err)
+    }
+  }
+
+  // ✅ FIXED: Get channel properly
+  const onAdminTyping = (sessionId, callback) => {
+    if (!ablyService.value) {
+      console.error('Cannot subscribe to typing: Ably not initialized')
+      return () => {}
+    }
+
+    try {
+      // ✅ Get channel from ablyService
+      const channel = ablyService.value.channels.get('typing-indicator')
+      let typingTimeout = null
+
+      const listener = (message) => {
+        const data = message.data
+
+        // Only process typing events from admin for this session
+        if (data.sender_type === 'admin' && data.session_id === sessionId) {
+          console.log('📥 Admin typing received:', data)
+          callback(data.is_typing)
+
+          // Auto-clear after 3 seconds
+          if (typingTimeout) clearTimeout(typingTimeout)
+
+          if (data.is_typing) {
+            typingTimeout = setTimeout(() => {
+              callback(false)
+            }, 3000)
+          }
+        }
+      }
+
+      channel.subscribe('typing', listener)
+      console.log(`✅ Subscribed to admin typing for session: ${sessionId}`)
+
+      return () => {
+        channel.unsubscribe('typing', listener)
+        if (typingTimeout) clearTimeout(typingTimeout)
+        console.log('🔕 Unsubscribed from admin typing')
+      }
+    } catch (err) {
+      console.error('Subscribe to admin typing failed:', err)
       return () => {}
     }
   }
@@ -177,7 +216,7 @@ export function useAbly() {
       ablyService.value.close()
       ablyService.value = null
       isConnected.value = false
-      // console.log('👋 Ably disconnected')
+      console.log('👋 Ably disconnected')
     }
   }
 
@@ -186,6 +225,8 @@ export function useAbly() {
     initializeAbly,
     onAdminReply,
     subscribe,
+    sendTypingIndicator,
+    onAdminTyping,
     disconnect,
   }
 }
