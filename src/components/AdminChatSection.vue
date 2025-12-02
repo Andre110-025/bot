@@ -1,7 +1,7 @@
 <script setup>
 import { ref, nextTick, onMounted, onBeforeUnmount, computed } from 'vue'
 import axios from 'axios'
-import getUserId from './utils/userId'
+import { getUserId } from './utils/userId'
 import { useAbly } from '../composables/userAbly'
 import { useChatNotifications } from '../composables/useChatNotifications'
 
@@ -665,255 +665,26 @@ onBeforeUnmount(() => {
   animation: spin 0.8s linear infinite;
 }
 
-/* ====== ADMIN CHAT SECTION MOBILE FIXES ====== */
-
-/* 1. FIX FOR SMALL SCREENS */
+/* Responsive Design */
 @media (max-width: 640px) {
-  .cdUser011011-chat-container {
-    border-radius: 0; /* Full width on mobile */
-    max-height: 100vh;
-    height: 100vh; /* Full viewport height */
-  }
-
   .cdUser011011-chat-header {
-    padding: 12px 16px;
-    min-height: 56px; /* Consistent header height */
-  }
-
-  .cdUser011011-header-title {
-    font-size: 14px;
-  }
-
-  .cdUser011011-status-text {
-    font-size: 12px;
-  }
-}
-
-/* 2. FIX MESSAGES AREA FOR MOBILE */
-@media (max-width: 640px) {
-  .cdUser011011-messages-wrapper {
-    flex: 1;
-    min-height: 0;
-    /* Safe area for iPhone notch */
-    padding-top: env(safe-area-inset-top, 0px);
+    padding: 14px 16px;
   }
 
   .cdUser011011-messages-container {
-    padding: 16px 12px;
-    gap: 10px;
+    padding: 16px;
   }
 
-  /* Make message bubbles wider on mobile */
   .cdUser011011-message-bubble {
-    max-width: 85%;
-    padding: 10px 14px;
-    font-size: 15px; /* Slightly larger for readability */
+    max-width: 80%;
   }
 
-  /* Smaller date dividers on mobile */
-  .cdUser011011-date-divider {
-    font-size: 10px;
-    margin: 8px 0;
-    padding: 4px 0;
-  }
-}
-
-/* 3. CRITICAL: FIX INPUT FOR MOBILE KEYBOARD */
-@media (max-width: 640px) {
   .cdUser011011-input-wrapper {
     padding: 12px 16px;
-    /* Safe area for iPhone home indicator */
-    padding-bottom: max(12px, env(safe-area-inset-bottom, 12px));
-    position: sticky;
-    bottom: 0;
-    background: #ffffff;
-    border-top: 1px solid #e5e7eb;
-    z-index: 10;
-  }
-
-  /* Fix typo in your CSS: ".cdUser0110110-message-input" should be ".cdUser011011-message-input:focus" */
-  .cdUser011011-message-input:focus {
-    border-color: #009970;
-    background: #ffffff;
-    box-shadow: 0 0 0 3px rgba(0, 153, 112, 0.08);
   }
 
   .cdUser011011-message-input {
-    font-size: 16px !important; /* Prevent iOS zoom */
-    min-height: 44px; /* Minimum touch target */
-    padding: 12px 52px 12px 16px;
-    border-radius: 22px;
+    font-size: 16px; /* Prevent zoom on iOS */
   }
-
-  /* Larger send button for mobile */
-  .cdUser011011-send-btn {
-    width: 44px;
-    height: 44px;
-    min-width: 44px;
-    min-height: 44px;
-  }
-
-  /* Remove blue outline on iOS */
-  .cdUser011011-message-input:focus {
-    -webkit-tap-highlight-color: transparent;
-    outline: none;
-  }
-}
-
-/* 4. FIX FOR LANDSCAPE MODE */
-@media (max-height: 500px) and (orientation: landscape) {
-  .cdUser011011-chat-container {
-    height: 100vh;
-  }
-
-  .cdUser011011-chat-header {
-    padding: 8px 12px;
-    min-height: 48px;
-  }
-
-  .cdUser011011-messages-container {
-    padding: 8px 12px;
-    gap: 8px;
-  }
-
-  .cdUser011011-message-bubble {
-    max-width: 75%;
-    padding: 8px 12px;
-    font-size: 14px;
-  }
-
-  .cdUser011011-input-wrapper {
-    padding: 8px 12px;
-  }
-}
-
-/* 5. FIX FOR VERY SMALL SCREENS */
-@media (max-width: 375px) {
-  .cdUser011011-chat-header {
-    padding: 10px 12px;
-  }
-
-  .cdUser011011-messages-container {
-    padding: 12px 10px;
-  }
-
-  .cdUser011011-message-bubble {
-    max-width: 88%;
-    padding: 9px 12px;
-    font-size: 14px;
-  }
-
-  .cdUser011011-input-wrapper {
-    padding: 10px 12px;
-    gap: 8px;
-  }
-
-  .cdUser011011-message-input {
-    padding: 10px 48px 10px 14px;
-  }
-
-  .cdUser011011-send-btn {
-    width: 40px;
-    height: 40px;
-  }
-}
-
-/* 6. IMPROVE TOUCH TARGETS FOR MOBILE */
-@media (max-width: 640px) {
-  .cdUser011011-send-btn,
-  .cdUser011011-message-input {
-    min-height: 44px; /* Apple recommended minimum touch target */
-  }
-
-  .cdUser011011-status-dot {
-    width: 10px;
-    height: 10px;
-  }
-}
-
-/* 7. FIX LOADING AND EMPTY STATES FOR MOBILE */
-@media (max-width: 640px) {
-  .cdUser011011-loading-state {
-    padding: 30px 20px;
-  }
-
-  .cdUser011011-empty-state {
-    padding: 30px 20px;
-  }
-
-  .cdUser011011-empty-state svg {
-    width: 40px;
-    height: 40px;
-    margin-bottom: 12px;
-  }
-
-  .cdUser011011-empty-state p {
-    font-size: 14px;
-  }
-
-  .cdUser011011-empty-state span {
-    font-size: 12px;
-  }
-}
-
-/* 8. PREVENT HORIZONTAL SCROLL ON MOBILE */
-@media (max-width: 640px) {
-  .cdUser011011-messages-container,
-  .cdUser011011-message-bubble {
-    overflow-x: hidden !important;
-  }
-
-  .cdUser011011-message-bubble p {
-    word-break: break-word;
-    overflow-wrap: break-word;
-    hyphens: auto;
-  }
-}
-
-/* 9. FIX TYPING INDICATOR FOR MOBILE */
-@media (max-width: 640px) {
-  .cdUser011011-typing-indicator {
-    padding: 10px 14px;
-  }
-
-  .cdUser011011-typing-indicator span {
-    width: 7px;
-    height: 7px;
-  }
-}
-
-/* 10. ADD VISUAL FEEDBACK FOR TOUCH */
-@media (max-width: 640px) {
-  .cdUser011011-send-btn:active:not(:disabled) {
-    transform: scale(0.92);
-    transition: transform 0.1s ease;
-  }
-
-  .cdUser011011-message-input:active {
-    border-color: #009970;
-  }
-}
-
-/* 11. FIX FOR iOS SAFE AREAS */
-@supports (padding: max(0px)) {
-  .cdUser011011-chat-container {
-    padding-top: env(safe-area-inset-top, 0px);
-  }
-
-  .cdUser011011-input-wrapper {
-    padding-bottom: max(16px, env(safe-area-inset-bottom, 16px));
-  }
-}
-
-.cdUser0110110-message-input:focus {
-  border-color: #009970;
-  background: #ffffff;
-  box-shadow: 0 0 0 3px rgba(0, 153, 112, 0.08);
-}
-
-.cdUser011011-message-input:focus {
-  border-color: #009970;
-  background: #ffffff;
-  box-shadow: 0 0 0 3px rgba(0, 153, 112, 0.08);
 }
 </style>
