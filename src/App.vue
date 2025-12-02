@@ -1238,4 +1238,315 @@ h3 {
 .cdUser011011-chat-message a:hover {
   text-decoration: none;
 }
+
+@media (max-width: 768px) {
+  .cdUser011011-popup {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    max-width: 100% !important;
+    max-height: 100% !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    margin: 0 !important;
+    z-index: 10000 !important;
+  }
+
+  /* Hide bubble when popup is open on mobile */
+  .cdUser011011-bubble {
+    display: none;
+  }
+}
+
+/* 2. FIX FOR SMALLER MOBILE DEVICES */
+@media (max-width: 480px) {
+  .cdUser011011-wrapper {
+    bottom: 0.75rem;
+    right: 0.75rem;
+  }
+
+  .cdUser011011-bubble {
+    width: 52px;
+    height: 52px;
+  }
+
+  .cdUser011011-icon {
+    width: 24px;
+    height: 24px;
+  }
+
+  /* Adjust ping dots for smaller bubble */
+  .cdUser011011-ping,
+  .cdUser011011-ping-static {
+    top: 6px;
+    right: 6px;
+    width: 10px;
+    height: 10px;
+  }
+}
+
+/* 3. FIX HEADER FOR MOBILE */
+@media (max-width: 768px) {
+  .cdUser011011-header {
+    padding: 12px 16px;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    min-height: 60px;
+  }
+
+  .cdUser011011-title {
+    font-size: 1rem;
+    margin-right: 50px; /* Reduced from 100px */
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .cdUser011011-subtitle {
+    font-size: 0.7rem;
+  }
+
+  .cdUser011011-avatar {
+    width: 36px;
+    height: 36px;
+  }
+
+  /* Make close button easier to tap */
+  .cdUser011011-close {
+    width: 36px;
+    height: 36px;
+    position: relative;
+  }
+
+  /* Increase touch target */
+  .cdUser011011-close::after {
+    content: '';
+    position: absolute;
+    top: -10px;
+    left: -10px;
+    right: -10px;
+    bottom: -10px;
+  }
+}
+
+/* 4. FIX MESSAGES AREA FOR MOBILE */
+@media (max-width: 768px) {
+  .cdUser011011-body {
+    padding: 1rem 0.75rem;
+    /* Safe area for iPhone notch */
+    padding-top: env(safe-area-inset-top, 1rem);
+    padding-bottom: env(safe-area-inset-bottom, 1rem);
+  }
+
+  .cdUser011011-messages-container {
+    gap: 0.75rem;
+  }
+
+  /* Make message bubbles take more width on mobile */
+  .cdUser011011-message {
+    max-width: 85%;
+    padding: 0.75rem 1rem;
+    font-size: 0.875rem;
+    line-height: 1.4;
+  }
+
+  /* Smaller avatars on mobile */
+  .cdUser011011-avatar-bot,
+  .cdUser011011-avatar-user {
+    width: 32px;
+    height: 32px;
+  }
+
+  .cdUser011011-avatar-bot {
+    margin: 0 8px 0 0;
+  }
+
+  .cdUser011011-avatar-user {
+    margin: 0 0 0 8px;
+  }
+}
+
+/* 5. CRITICAL: FIX INPUT FOR MOBILE KEYBOARD */
+@media (max-width: 768px) {
+  .cdUser011011-footer {
+    padding-bottom: env(safe-area-inset-bottom, 0);
+    position: sticky;
+    bottom: 0;
+    background: #ffffff;
+    border-top: 1px solid #e5e7eb;
+    z-index: 10;
+  }
+
+  .cdUser011011-footer-main {
+    padding: 0.75rem;
+  }
+
+  /* Prevent iOS zoom on input focus */
+  .cdUser011011-footer-input {
+    font-size: 16px !important;
+    min-height: 44px; /* Minimum touch target */
+    padding: 12px 52px 12px 16px;
+    border-radius: 22px;
+  }
+
+  /* Larger send button for mobile */
+  .cdUser011011-footer-send {
+    width: 44px;
+    height: 44px;
+    right: 8px;
+  }
+
+  /* Remove blue outline on iOS */
+  .cdUser011011-footer-input:focus {
+    -webkit-tap-highlight-color: transparent;
+    outline: none;
+  }
+}
+
+/* 6. FIX FOR LANDSCAPE MODE */
+@media (max-height: 500px) and (orientation: landscape) {
+  .cdUser011011-popup {
+    height: 100vh !important;
+  }
+
+  .cdUser011011-header {
+    padding: 8px 12px;
+    min-height: 50px;
+  }
+
+  .cdUser011011-body {
+    padding: 0.5rem;
+  }
+
+  .cdUser011011-footer {
+    padding: 0.5rem;
+  }
+}
+
+/* 7. FIX TYPOGRAPHY FOR MOBILE */
+@media (max-width: 768px) {
+  .cdUser011011-chat-message {
+    font-size: 14px;
+    line-height: 1.5;
+  }
+
+  .cdUser011011-chat-message h1 {
+    font-size: 18px;
+    margin: 10px 0 5px;
+  }
+
+  .cdUser011011-chat-message h2 {
+    font-size: 16px;
+    margin: 9px 0 5px;
+  }
+
+  .cdUser011011-chat-message h3 {
+    font-size: 15px;
+    margin: 8px 0 4px;
+  }
+
+  .cdUser011011-chat-message ul,
+  .cdUser011011-chat-message ol {
+    padding-left: 16px;
+  }
+}
+
+/* 8. FIX FALLBACK BUTTON FOR MOBILE */
+@media (max-width: 768px) {
+  .cdUser011011-fallback-btn {
+    padding: 10px 16px;
+    font-size: 0.85rem;
+    white-space: normal;
+    line-height: 1.3;
+    text-align: center;
+    width: 100%;
+    max-width: 100%;
+    margin: 8px 0 0 0;
+  }
+}
+
+/* 9. PREVENT HORIZONTAL SCROLL ON MOBILE */
+@media (max-width: 768px) {
+  .cdUser011011-popup,
+  .cdUser011011-body,
+  .cdUser011011-messages-container {
+    overflow-x: hidden !important;
+  }
+
+  .cdUser011011-message {
+    word-break: break-word;
+    overflow-wrap: break-word;
+    hyphens: auto;
+  }
+}
+
+/* 10. IMPROVE ANIMATIONS FOR MOBILE */
+@media (max-width: 768px) {
+  .cdUser011011-fade-enter-active {
+    animation: cdUser011011-mobileSlideIn 0.3s ease-out;
+  }
+
+  .cdUser011011-fade-leave-active {
+    animation: cdUser011011-mobileSlideOut 0.25s ease-in;
+  }
+
+  @keyframes cdUser011011-mobileSlideIn {
+    from {
+      transform: translateY(100%);
+      opacity: 0;
+    }
+    to {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
+
+  @keyframes cdUser011011-mobileSlideOut {
+    from {
+      transform: translateY(0);
+      opacity: 1;
+    }
+    to {
+      transform: translateY(100%);
+      opacity: 0;
+    }
+  }
+}
+
+/* 11. FIX FOR VERY SMALL SCREENS (iPhone SE, etc.) */
+@media (max-width: 320px) {
+  .cdUser011011-wrapper {
+    bottom: 0.5rem;
+    right: 0.5rem;
+  }
+
+  .cdUser011011-bubble {
+    width: 48px;
+    height: 48px;
+  }
+
+  .cdUser011011-icon {
+    width: 22px;
+    height: 22px;
+  }
+
+  .cdUser011011-header {
+    padding: 10px 12px;
+  }
+
+  .cdUser011011-title {
+    font-size: 0.95rem;
+  }
+
+  .cdUser011011-message {
+    max-width: 90%;
+    padding: 0.625rem 0.875rem;
+    font-size: 0.8125rem;
+  }
+}
 </style>

@@ -225,17 +225,17 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <div class="chat-container">
-    <div class="chat-header">
-      <div class="header-left">
-        <div class="status-dot" :class="{ active: isConnected }"></div>
-        <span class="header-title">Admin Chat</span>
+  <div class="cdUser011011-chat-container">
+    <div class="cdUser011011-chat-header">
+      <div class="cdUser011011-header-left">
+        <div class="cdUser011011-status-dot" :class="{ active: isConnected }"></div>
+        <span class="cdUser011011-header-title">Admin Chat</span>
       </div>
-      <span class="status-text">{{ statusText }}</span>
+      <span class="cdUser011011-status-text">{{ statusText }}</span>
     </div>
 
-    <div class="messages-wrapper">
-      <div ref="chatContainerRef" class="messages-container">
+    <div class="cdUser011011-messages-wrapper">
+      <div ref="chatContainerRef" class="cdUser011011-messages-container">
         <template v-for="(msg, i) in chatMessages" :key="msg.id || i">
           <div
             v-if="
@@ -243,7 +243,7 @@ onBeforeUnmount(() => {
               new Date(msg.timestamp).toDateString() !==
                 new Date(chatMessages[i - 1].timestamp).toDateString()
             "
-            class="date-divider"
+            class="cdUser011011-date-divider"
           >
             {{
               new Date(msg.timestamp).toDateString() === new Date().toDateString()
@@ -255,15 +255,15 @@ onBeforeUnmount(() => {
             }}
           </div>
 
-          <div class="message-row" :class="getMessageAlignment(msg)">
-            <div class="message-bubble" :class="getMessageAlignment(msg)">
+          <div class="cdUser011011-message-row" :class="getMessageAlignment(msg)">
+            <div class="cdUser011011-message-bubble" :class="getMessageAlignment(msg)">
               <p>{{ msg.message }}</p>
-              <span class="time">{{ formatTime(msg.timestamp) }}</span>
+              <span class="cdUser011011-time">{{ formatTime(msg.timestamp) }}</span>
             </div>
           </div>
 
-          <div v-if="isAdminTyping" class="message-row admin">
-            <div class="typing-indicator">
+          <div v-if="isAdminTyping" class="cdUser011011-message-row admin">
+            <div class="cdUser011011-typing-indicator">
               <span></span>
               <span></span>
               <span></span>
@@ -271,12 +271,12 @@ onBeforeUnmount(() => {
           </div>
         </template>
 
-        <div v-if="loading" class="loading-state">
-          <div class="spinner"></div>
+        <div v-if="loading" class="cdUser011011-loading-state">
+          <div class="cdUser011011-spinner"></div>
           <p>Loading messages...</p>
         </div>
 
-        <div v-if="chatMessages.length === 0 && !loading" class="empty-state">
+        <div v-if="chatMessages.length === 0 && !loading" class="cdUser011011-empty-state">
           <svg
             xmlns="http://www.w3.org/2000/svg"
             width="48"
@@ -294,7 +294,7 @@ onBeforeUnmount(() => {
       </div>
     </div>
 
-    <div class="input-wrapper">
+    <div class="cdUser011011-input-wrapper">
       <input
         v-model="newMessage"
         @keyup.enter="sendMessage"
@@ -302,11 +302,11 @@ onBeforeUnmount(() => {
         type="text"
         placeholder="Type a message..."
         :disabled="sending || !isConnected"
-        class="message-input"
+        class="cdUser011011-message-input"
       />
       <button
         @click="sendMessage"
-        class="send-btn"
+        class="cdUser011011-send-btn"
         :disabled="!newMessage.trim() || sending || !isConnected"
       >
         <svg
@@ -321,17 +321,15 @@ onBeforeUnmount(() => {
           stroke-linecap="round"
           stroke-linejoin="round"
         >
-          <line x1="22" y1="2" x2="11" y2="13" />
-          <polygon points="22 2 15 22 11 13 2 9 22 2" />
+          <line x1="22" y1="2" />
         </svg>
-        <div v-else class="btn-loader"></div>
       </button>
     </div>
   </div>
 </template>
 
 <style scoped>
-.typing-indicator {
+.cdUser011011-typing-indicator {
   display: flex;
   gap: 4px;
   padding: 12px 16px;
@@ -341,7 +339,7 @@ onBeforeUnmount(() => {
   border-bottom-left-radius: 4px;
 }
 
-.typing-indicator span {
+.cdUser011011-typing-indicator span {
   width: 8px;
   height: 8px;
   background: #9ca3af;
@@ -349,15 +347,15 @@ onBeforeUnmount(() => {
   animation: typing-bounce 1.4s infinite ease-in-out;
 }
 
-.typing-indicator span:nth-child(1) {
+.cdUser011011-typing-indicator span:nth-child(1) {
   animation-delay: 0s;
 }
 
-.typing-indicator span:nth-child(2) {
+.cdUser011011-typing-indicator span:nth-child(2) {
   animation-delay: 0.2s;
 }
 
-.typing-indicator span:nth-child(3) {
+.cdUser011011-typing-indicator span:nth-child(3) {
   animation-delay: 0.4s;
 }
 
@@ -374,7 +372,7 @@ onBeforeUnmount(() => {
   }
 }
 
-.chat-container {
+.cdUser011011-chat-container {
   display: flex;
   flex-direction: column;
   height: 100%;
@@ -387,7 +385,7 @@ onBeforeUnmount(() => {
 }
 
 /* Clean Simple Header */
-.chat-header {
+.cdUser011011-chat-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -397,13 +395,13 @@ onBeforeUnmount(() => {
   flex-shrink: 0;
 }
 
-.header-left {
+.cdUser011011-header-left {
   display: flex;
   align-items: center;
   gap: 10px;
 }
 
-.status-dot {
+.cdUser011011-status-dot {
   width: 8px;
   height: 8px;
   border-radius: 50%;
@@ -411,32 +409,32 @@ onBeforeUnmount(() => {
   transition: all 0.3s ease;
 }
 
-.status-dot.active {
+.cdUser011011-status-dot.active {
   background: #10b981;
   box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.2);
 }
 
-.header-title {
+.cdUser011011-header-title {
   font-size: 15px;
   font-weight: 600;
   color: #111827;
 }
 
-.status-text {
+.cdUser011011-status-text {
   font-size: 13px;
   color: #6b7280;
   font-weight: 500;
 }
 
 /* Messages Area */
-.messages-wrapper {
+.cdUser011011-messages-wrapper {
   flex: 1;
   overflow: hidden;
   background: #fafafa;
   min-height: 0;
 }
 
-.messages-container {
+.cdUser011011-messages-container {
   height: 100%;
   overflow-y: auto;
   padding: 20px;
@@ -445,25 +443,25 @@ onBeforeUnmount(() => {
   gap: 12px;
 }
 
-.messages-container::-webkit-scrollbar {
+.cdUser011011-messages-container::-webkit-scrollbar {
   width: 6px;
 }
 
-.messages-container::-webkit-scrollbar-track {
+.cdUser011011-messages-container::-webkit-scrollbar-track {
   background: transparent;
 }
 
-.messages-container::-webkit-scrollbar-thumb {
+.cdUser011011-messages-container::-webkit-scrollbar-thumb {
   background: #e5e7eb;
   border-radius: 3px;
 }
 
-.messages-container::-webkit-scrollbar-thumb:hover {
+.cdUser011011-messages-container::-webkit-scrollbar-thumb:hover {
   background: #d1d5db;
 }
 
 /* Date Divider */
-.date-divider {
+.cdUser011011-date-divider {
   text-align: center;
   font-size: 11px;
   color: #9ca3af;
@@ -474,7 +472,7 @@ onBeforeUnmount(() => {
 }
 
 /* Message Row */
-.message-row {
+.cdUser011011-message-row {
   display: flex;
   animation: slideUp 0.2s ease-out;
 }
@@ -490,16 +488,16 @@ onBeforeUnmount(() => {
   }
 }
 
-.message-row.admin {
+.cdUser011011-message-row.admin {
   justify-content: flex-start;
 }
 
-.message-row.user {
+.cdUser011011-message-row.user {
   justify-content: flex-end;
 }
 
 /* Message Bubble */
-.message-bubble {
+.cdUser011011-message-bubble {
   max-width: 70%;
   padding: 10px 14px;
   border-radius: 18px;
@@ -508,25 +506,25 @@ onBeforeUnmount(() => {
   word-wrap: break-word;
 }
 
-.message-bubble.admin {
+.cdUser011011-message-bubble.admin {
   background: #ffffff;
   color: #1f2937;
   border: 1px solid #e5e7eb;
   border-bottom-left-radius: 4px;
 }
 
-.message-bubble.user {
+.cdUser011011-message-bubble.user {
   background: #009970;
   color: #ffffff;
   border-bottom-right-radius: 4px;
 }
 
-.message-bubble p {
+.cdUser011011-message-bubble p {
   margin: 0 0 4px 0;
   white-space: pre-wrap;
 }
 
-.message-bubble .time {
+.cdUser011011-message-bubble .time {
   font-size: 10px;
   opacity: 0.6;
   display: block;
@@ -534,7 +532,7 @@ onBeforeUnmount(() => {
 }
 
 /* Loading State */
-.loading-state {
+.cdUser011011-loading-state {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -543,7 +541,7 @@ onBeforeUnmount(() => {
   color: #9ca3af;
 }
 
-.spinner {
+.cdUser011011-spinner {
   width: 32px;
   height: 32px;
   border: 2px solid #e5e7eb;
@@ -558,13 +556,13 @@ onBeforeUnmount(() => {
   }
 }
 
-.loading-state p {
+.cdUser011011-loading-state p {
   margin: 0;
   font-size: 13px;
 }
 
 /* Empty State */
-.empty-state {
+.cdUser011011-empty-state {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -575,25 +573,25 @@ onBeforeUnmount(() => {
   color: #9ca3af;
 }
 
-.empty-state svg {
+.cdUser011011-empty-state svg {
   margin-bottom: 16px;
   opacity: 0.5;
 }
 
-.empty-state p {
+.cdUser011011-empty-state p {
   margin: 0 0 4px 0;
   font-size: 15px;
   font-weight: 600;
   color: #6b7280;
 }
 
-.empty-state span {
+.cdUser011011-empty-state span {
   font-size: 13px;
   color: #9ca3af;
 }
 
 /* Input Area */
-.input-wrapper {
+.cdUser011011-input-wrapper {
   display: flex;
   gap: 10px;
   padding: 16px 20px;
@@ -602,7 +600,7 @@ onBeforeUnmount(() => {
   flex-shrink: 0;
 }
 
-.message-input {
+.cdUser011011-message-input {
   flex: 1;
   padding: 12px 16px;
   border: 1px solid #e5e7eb;
@@ -613,22 +611,22 @@ onBeforeUnmount(() => {
   background: #fafafa;
 }
 
-.message-input:focus {
+.cdUser0110110-message-input:focus {
   border-color: #009970;
   background: #ffffff;
   box-shadow: 0 0 0 3px rgba(0, 153, 112, 0.08);
 }
 
-.message-input:disabled {
+.cdUser011011-message-input:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }
 
-.message-input::placeholder {
+.cdUser011011-message-input::placeholder {
   color: #9ca3af;
 }
 
-.send-btn {
+.cdUser011011-send-btn {
   width: 44px;
   height: 44px;
   background: #009970;
@@ -643,22 +641,22 @@ onBeforeUnmount(() => {
   flex-shrink: 0;
 }
 
-.send-btn:hover:not(:disabled) {
+.cdUser011011-send-btn:hover:not(:disabled) {
   background: #00805d;
   transform: scale(1.05);
 }
 
-.send-btn:active:not(:disabled) {
+.cdUser011011-send-btn:active:not(:disabled) {
   transform: scale(0.95);
 }
 
-.send-btn:disabled {
+.cdUser011011-send-btn:disabled {
   opacity: 0.4;
   cursor: not-allowed;
   transform: none;
 }
 
-.btn-loader {
+.cdUser011011-btn-loader {
   width: 16px;
   height: 16px;
   border: 2px solid rgba(255, 255, 255, 0.3);
@@ -667,26 +665,255 @@ onBeforeUnmount(() => {
   animation: spin 0.8s linear infinite;
 }
 
-/* Responsive Design */
+/* ====== ADMIN CHAT SECTION MOBILE FIXES ====== */
+
+/* 1. FIX FOR SMALL SCREENS */
 @media (max-width: 640px) {
-  .chat-header {
-    padding: 14px 16px;
+  .cdUser011011-chat-container {
+    border-radius: 0; /* Full width on mobile */
+    max-height: 100vh;
+    height: 100vh; /* Full viewport height */
   }
 
-  .messages-container {
-    padding: 16px;
-  }
-
-  .message-bubble {
-    max-width: 80%;
-  }
-
-  .input-wrapper {
+  .cdUser011011-chat-header {
     padding: 12px 16px;
+    min-height: 56px; /* Consistent header height */
   }
 
-  .message-input {
-    font-size: 16px; /* Prevent zoom on iOS */
+  .cdUser011011-header-title {
+    font-size: 14px;
   }
+
+  .cdUser011011-status-text {
+    font-size: 12px;
+  }
+}
+
+/* 2. FIX MESSAGES AREA FOR MOBILE */
+@media (max-width: 640px) {
+  .cdUser011011-messages-wrapper {
+    flex: 1;
+    min-height: 0;
+    /* Safe area for iPhone notch */
+    padding-top: env(safe-area-inset-top, 0px);
+  }
+
+  .cdUser011011-messages-container {
+    padding: 16px 12px;
+    gap: 10px;
+  }
+
+  /* Make message bubbles wider on mobile */
+  .cdUser011011-message-bubble {
+    max-width: 85%;
+    padding: 10px 14px;
+    font-size: 15px; /* Slightly larger for readability */
+  }
+
+  /* Smaller date dividers on mobile */
+  .cdUser011011-date-divider {
+    font-size: 10px;
+    margin: 8px 0;
+    padding: 4px 0;
+  }
+}
+
+/* 3. CRITICAL: FIX INPUT FOR MOBILE KEYBOARD */
+@media (max-width: 640px) {
+  .cdUser011011-input-wrapper {
+    padding: 12px 16px;
+    /* Safe area for iPhone home indicator */
+    padding-bottom: max(12px, env(safe-area-inset-bottom, 12px));
+    position: sticky;
+    bottom: 0;
+    background: #ffffff;
+    border-top: 1px solid #e5e7eb;
+    z-index: 10;
+  }
+
+  /* Fix typo in your CSS: ".cdUser0110110-message-input" should be ".cdUser011011-message-input:focus" */
+  .cdUser011011-message-input:focus {
+    border-color: #009970;
+    background: #ffffff;
+    box-shadow: 0 0 0 3px rgba(0, 153, 112, 0.08);
+  }
+
+  .cdUser011011-message-input {
+    font-size: 16px !important; /* Prevent iOS zoom */
+    min-height: 44px; /* Minimum touch target */
+    padding: 12px 52px 12px 16px;
+    border-radius: 22px;
+  }
+
+  /* Larger send button for mobile */
+  .cdUser011011-send-btn {
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    min-height: 44px;
+  }
+
+  /* Remove blue outline on iOS */
+  .cdUser011011-message-input:focus {
+    -webkit-tap-highlight-color: transparent;
+    outline: none;
+  }
+}
+
+/* 4. FIX FOR LANDSCAPE MODE */
+@media (max-height: 500px) and (orientation: landscape) {
+  .cdUser011011-chat-container {
+    height: 100vh;
+  }
+
+  .cdUser011011-chat-header {
+    padding: 8px 12px;
+    min-height: 48px;
+  }
+
+  .cdUser011011-messages-container {
+    padding: 8px 12px;
+    gap: 8px;
+  }
+
+  .cdUser011011-message-bubble {
+    max-width: 75%;
+    padding: 8px 12px;
+    font-size: 14px;
+  }
+
+  .cdUser011011-input-wrapper {
+    padding: 8px 12px;
+  }
+}
+
+/* 5. FIX FOR VERY SMALL SCREENS */
+@media (max-width: 375px) {
+  .cdUser011011-chat-header {
+    padding: 10px 12px;
+  }
+
+  .cdUser011011-messages-container {
+    padding: 12px 10px;
+  }
+
+  .cdUser011011-message-bubble {
+    max-width: 88%;
+    padding: 9px 12px;
+    font-size: 14px;
+  }
+
+  .cdUser011011-input-wrapper {
+    padding: 10px 12px;
+    gap: 8px;
+  }
+
+  .cdUser011011-message-input {
+    padding: 10px 48px 10px 14px;
+  }
+
+  .cdUser011011-send-btn {
+    width: 40px;
+    height: 40px;
+  }
+}
+
+/* 6. IMPROVE TOUCH TARGETS FOR MOBILE */
+@media (max-width: 640px) {
+  .cdUser011011-send-btn,
+  .cdUser011011-message-input {
+    min-height: 44px; /* Apple recommended minimum touch target */
+  }
+
+  .cdUser011011-status-dot {
+    width: 10px;
+    height: 10px;
+  }
+}
+
+/* 7. FIX LOADING AND EMPTY STATES FOR MOBILE */
+@media (max-width: 640px) {
+  .cdUser011011-loading-state {
+    padding: 30px 20px;
+  }
+
+  .cdUser011011-empty-state {
+    padding: 30px 20px;
+  }
+
+  .cdUser011011-empty-state svg {
+    width: 40px;
+    height: 40px;
+    margin-bottom: 12px;
+  }
+
+  .cdUser011011-empty-state p {
+    font-size: 14px;
+  }
+
+  .cdUser011011-empty-state span {
+    font-size: 12px;
+  }
+}
+
+/* 8. PREVENT HORIZONTAL SCROLL ON MOBILE */
+@media (max-width: 640px) {
+  .cdUser011011-messages-container,
+  .cdUser011011-message-bubble {
+    overflow-x: hidden !important;
+  }
+
+  .cdUser011011-message-bubble p {
+    word-break: break-word;
+    overflow-wrap: break-word;
+    hyphens: auto;
+  }
+}
+
+/* 9. FIX TYPING INDICATOR FOR MOBILE */
+@media (max-width: 640px) {
+  .cdUser011011-typing-indicator {
+    padding: 10px 14px;
+  }
+
+  .cdUser011011-typing-indicator span {
+    width: 7px;
+    height: 7px;
+  }
+}
+
+/* 10. ADD VISUAL FEEDBACK FOR TOUCH */
+@media (max-width: 640px) {
+  .cdUser011011-send-btn:active:not(:disabled) {
+    transform: scale(0.92);
+    transition: transform 0.1s ease;
+  }
+
+  .cdUser011011-message-input:active {
+    border-color: #009970;
+  }
+}
+
+/* 11. FIX FOR iOS SAFE AREAS */
+@supports (padding: max(0px)) {
+  .cdUser011011-chat-container {
+    padding-top: env(safe-area-inset-top, 0px);
+  }
+
+  .cdUser011011-input-wrapper {
+    padding-bottom: max(16px, env(safe-area-inset-bottom, 16px));
+  }
+}
+
+.cdUser0110110-message-input:focus {
+  border-color: #009970;
+  background: #ffffff;
+  box-shadow: 0 0 0 3px rgba(0, 153, 112, 0.08);
+}
+
+.cdUser011011-message-input:focus {
+  border-color: #009970;
+  background: #ffffff;
+  box-shadow: 0 0 0 3px rgba(0, 153, 112, 0.08);
 }
 </style>
