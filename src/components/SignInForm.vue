@@ -194,12 +194,12 @@ const handleForm = () => {
 }
 
 .cdUser011011-input-group input:focus {
-  border-color: #10b981;
+  border-color: #10b1c6;
   box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
 }
 
 .cdUser011011-btn {
-  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  background: #10b1c6;
   color: white;
   font-weight: 600;
   font-size: 0.95rem;
