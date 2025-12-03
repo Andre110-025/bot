@@ -451,7 +451,7 @@ const avatarUrl = computed(() => {
             <header class="cdUser011011-header">
               <div class="cdUser011011-header-left">
                 <div v-if="showAvatar" class="cdUser011011-avatar">
-                  <img :src="avatarUrl" alt="Chatbot Avatar" />
+                  <img :src="avatarUrl" class="cdUser011011-avatar-img" />
                 </div>
                 <div v-else class="cdUser011011-avatar">
                   <svg
@@ -791,6 +791,10 @@ const avatarUrl = computed(() => {
   flex-shrink: 0;
   margin: 0;
   padding: 0;
+}
+.cdUser011011-avatar-img {
+  width: 20px;
+  height: 20px;
 }
 
 .cdUser011011-title {
