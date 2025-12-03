@@ -924,13 +924,13 @@ const avatarUrl = computed(() => {
 }
 
 .cdUser011011-avatar-bot {
-  background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+  background: var(--primary-color);
   color: #fff;
   margin: 0 10px 0 0;
 }
 
 .cdUser011011-avatar-user {
-  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  background: var(--secondary-color);
   color: #fff;
   margin: 0 0 0 10px;
 }
@@ -1101,7 +1101,7 @@ const avatarUrl = computed(() => {
   width: 100%;
   padding: 0.875rem 3.5rem 0.875rem 1rem;
   border-radius: 12px;
-  border: 1.5px solid #e5e7eb;
+  border: 1.5px solid #10b1c6;
   font-size: 0.9375rem;
   outline: none;
   transition: all 0.2s ease;
@@ -1112,7 +1112,7 @@ const avatarUrl = computed(() => {
 }
 
 .cdUser011011-footer-input:focus {
-  border-color: #10b981;
+  border-color: #10b1c6;
   background: #ffffff;
   box-shadow:
     0 0 0 3px rgba(16, 185, 129, 0.1),
@@ -1128,7 +1128,7 @@ const avatarUrl = computed(() => {
   top: 50%;
   right: 6px;
   transform: translateY(-50%);
-  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  background: var(--primary-color);
   color: #fff;
   border: none;
   border-radius: 8px;
