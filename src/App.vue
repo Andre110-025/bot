@@ -432,7 +432,7 @@ const avatarUrl = computed(() => {
 </script>
 
 <template>
-  <div class="cdUser011011-wrapper" v-if="showBubble">
+  <div class="cdUser011011-wrapper position-bottom-right" v-if="showBubble">
     <div class="cdUser011011-chatbot">
       <div class="cdUser011011-inner">
         <div class="cdUser011011-bubble" @click="togglePopup">
@@ -451,11 +451,7 @@ const avatarUrl = computed(() => {
             <header class="cdUser011011-header">
               <div class="cdUser011011-header-left">
                 <div v-if="showAvatar" class="cdUser011011-avatar">
-                  <img
-                    :src="avatarUrl"
-                    class="w-full h-full object-cover rounded-lg"
-                    alt="Chatbot Avatar"
-                  />
+                  <img :src="avatarUrl" alt="Chatbot Avatar" />
                 </div>
                 <div v-else class="cdUser011011-avatar">
                   <svg
@@ -501,11 +497,7 @@ const avatarUrl = computed(() => {
                 >
                   <template v-if="msg.sender === 'AI'">
                     <div v-if="showAvatar" class="cdUser011011-avatar-bot">
-                      <img
-                        :src="avatarUrl"
-                        class="w-full h-full object-cover rounded-full"
-                        alt="Bot Avatar"
-                      />
+                      <img :src="avatarUrl" alt="Bot Avatar" />
                     </div>
                     <div v-else class="cdUser011011-avatar-bot">
                       <svg
@@ -661,7 +653,7 @@ const avatarUrl = computed(() => {
 .cdUser011011-bubble {
   width: var(--bubble-size);
   height: var(--bubble-size);
-  background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+  background: var(--primary-color);
   border-radius: 50%;
   color: white;
   display: flex;

@@ -230,4 +230,31 @@ export function useAbly() {
     disconnect,
   }
 }
+
+const getCustomization = async () => {
+  if (!props.api || !props.website) return
+
+  try {
+    const response = await axios.get('https://assitance.storehive.com.ng/public/api/getsettings', {
+      params: {
+        website: props.website,
+        api: props.api,
+      },
+    })
+    console.log('API Response:', response.data)
+
+    // Check if Settings exists and has items, then take the first one
+    if (response.data?.Settings?.length > 0) {
+      customization.value = response.data.Settings[0] // <-- THIS IS THE FIX
+      console.log('Customization data:', customization.value)
+      applyCustomizationStyles()
+    } else {
+      console.warn('No settings found in response')
+      applyDefaultStyles()
+    }
+  } catch (err) {
+    console.error('Error fetching customization:', err)
+    applyDefaultStyles()
+  }
+}
 </script>
