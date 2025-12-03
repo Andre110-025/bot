@@ -760,7 +760,7 @@ const avatarUrl = computed(() => {
 
 /* === Header === */
 .cdUser011011-header {
-  background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+  background: var(--primary-color);
   color: #fff;
   padding: 10px 15px;
   display: flex;
