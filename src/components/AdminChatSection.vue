@@ -1,7 +1,7 @@
 <script setup>
 import { ref, nextTick, onMounted, onBeforeUnmount, computed } from 'vue'
 import axios from 'axios'
-import { getUserId } from './utils/userId'
+// import { getUserId } from './utils/userId'
 import { useAbly } from '../composables/userAbly'
 import { useChatNotifications } from '../composables/useChatNotifications'
 
@@ -10,6 +10,8 @@ const props = defineProps({
   api: { type: String, required: true },
   website: { type: String, required: true },
 })
+
+console.log('userId prop:', props.userId)
 
 const { setUnreadMessage } = useChatNotifications()
 
@@ -21,12 +23,12 @@ const isAdminTyping = ref(false)
 let typingUnsubscribe = null
 let inputTypingTimeout = null
 
-const cleanWebsite = props.website
-  .replace(/^https?:\/\//, '')
-  .replace(/^www\./, '')
-  .split('/')[0]
+// const cleanWebsite = props.website
+//   .replace(/^https?:\/\//, '')
+//   .replace(/^www\./, '')
+//   .split('/')[0]
 
-const sessionId = getUserId(cleanWebsite)
+// const props.userId = getUserId(cleanWebsite)
 
 // Initialize Ably Composables
 const {
@@ -58,7 +60,7 @@ const fetchInitialMessages = async () => {
   if (!cleanWebsite) return
   try {
     loading.value = true
-    const url = `https://assitance.storehive.com.ng/public/api/chat/admin/session/${sessionId}`
+    const url = `https://assitance.storehive.com.ng/public/api/chat/admin/session/${props.userId}`
     const response = await axios.get(url, {
       params: { website: props.website },
     })
@@ -92,7 +94,7 @@ const sendMessage = async () => {
   newMessage.value = ''
 
   if (inputTypingTimeout) clearTimeout(inputTypingTimeout)
-  sendTypingIndicator(sessionId, false)
+  sendTypingIndicator(props.userId, false)
 
   try {
     sending.value = true
@@ -111,7 +113,7 @@ const sendMessage = async () => {
     scrollToBottom()
 
     await axios.post('https://assitance.storehive.com.ng/public/api/chat/admin/message', {
-      session_id: sessionId,
+      session_id: props.userId,
       message: messageToSend,
       website: props.website,
       sender_type: 'user',
@@ -170,12 +172,12 @@ const handleAdminReply = async (messageData) => {
 }
 
 const handleInputChange = () => {
-  sendTypingIndicator(sessionId, true)
+  sendTypingIndicator(props.userId, true)
 
   if (inputTypingTimeout) clearTimeout(inputTypingTimeout)
 
   inputTypingTimeout = setTimeout(() => {
-    sendTypingIndicator(sessionId, false)
+    sendTypingIndicator(props.userId, false)
   }, 1000)
 }
 
@@ -205,9 +207,9 @@ onMounted(async () => {
   // Initialize Ably
   const isAblyInitialized = await initializeAbly()
   if (isAblyInitialized) {
-    unsubscribeFromAbly = onAdminReply(sessionId, handleAdminReply)
+    unsubscribeFromAbly = onAdminReply(props.userId, handleAdminReply)
 
-    typingUnsubscribe = onAdminTyping(sessionId, (isTyping) => {
+    typingUnsubscribe = onAdminTyping(props.userId, (isTyping) => {
       isAdminTyping.value = isTyping
       if (isTyping) {
         nextTick(() => scrollToBottom())
