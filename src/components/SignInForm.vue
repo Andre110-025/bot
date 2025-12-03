@@ -2,6 +2,16 @@
 import { ref, computed, reactive } from 'vue'
 import LoadingAnime from './LoadingAnime.vue'
 
+const props = defineProps({
+  primaryColor: {
+    type: String,
+  },
+})
+
+const customStyles = computed(() => ({
+  '--primary-color': props.primaryColor,
+}))
+
 const emit = defineEmits(['form-complete'])
 
 const loading = ref(false)
@@ -70,17 +80,17 @@ const handleForm = () => {
       <form @submit.prevent="handleForm" class="cdUser011011-form">
         <div class="cdUser011011-input-group">
           <label>Full Name</label>
-          <input v-model="form.name" type="text" />
+          <input v-model="form.name" type="text" :style="customStyles" />
         </div>
 
         <div class="cdUser011011-input-group">
           <label>Email Address</label>
-          <input v-model="form.email" type="email" />
+          <input v-model="form.email" type="email" :style="customStyles" />
         </div>
 
         <div class="cdUser011011-input-group">
           <label>Phone Number</label>
-          <input v-model="form.phone" type="tel" />
+          <input v-model="form.phone" type="tel" :style="customStyles" />
         </div>
 
         <button type="submit" :disabled="!isFormValid || loading" class="cdUser011011-btn">
@@ -181,7 +191,7 @@ const handleForm = () => {
 .cdUser011011-input-group input {
   width: 100%;
   padding: 10px 12px;
-  border: 1px solid #d1d5db;
+  border: 1px solid var(--primary-color);
   border-radius: 8px;
   outline: none;
   transition:
@@ -194,12 +204,12 @@ const handleForm = () => {
 }
 
 .cdUser011011-input-group input:focus {
-  border-color: #10b1c6;
+  border-color: var(--primary-color);
   box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
 }
 
 .cdUser011011-btn {
-  background: #10b1c6;
+  background: var(--primary-color);
   color: white;
   font-weight: 600;
   font-size: 0.95rem;

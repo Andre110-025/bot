@@ -467,10 +467,8 @@ const avatarUrl = computed(() => {
                   </svg>
                 </div>
                 <div>
-                  <h2 class="cdUser011011-title">
-                    Chat<span class="cdUser011011-title-highlight">Bot</span>
-                  </h2>
-                  <p class="cdUser011011-subtitle">Your AI assistant, ready to help</p>
+                  <h2 class="cdUser011011-title">Help Desk</h2>
+                  <p class="cdUser011011-subtitle">Your support assistant, ready to help</p>
                 </div>
               </div>
               <button class="cdUser011011-close" @click="togglePopup">
@@ -483,7 +481,11 @@ const avatarUrl = computed(() => {
               </button>
             </header>
 
-            <SignInForm v-if="!showChat" @form-complete="handleFormComplete" />
+            <SignInForm
+              v-if="!showChat"
+              @form-complete="handleFormComplete"
+              :primary-color="customization.value?.primarycolor"
+            />
 
             <section v-else ref="chatContainer" class="cdUser011011-body">
               <div v-if="showUserBotChat" class="cdUser011011-messages-container">

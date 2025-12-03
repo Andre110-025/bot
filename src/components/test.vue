@@ -330,6 +330,62 @@ onBeforeUnmount(() => {
   </div>
 </template>
 
+<template>
+  <div class="child-component" :style="customStyles">
+    <div class="styled-element">I'm styled with CSS variables!</div>
+    <button class="styled-button">Click me</button>
+  </div>
+</template>
+
+<script setup>
+import { computed } from 'vue'
+
+const props = defineProps({
+  primaryColor: {
+    type: String,
+    default: '#10b981',
+  },
+  secondaryColor: {
+    type: String,
+    default: '#059669',
+  },
+})
+
+// Create style object with CSS variables
+const customStyles = computed(() => ({
+  '--primary-color': props.primaryColor,
+  '--secondary-color': props.secondaryColor,
+}))
+</script>
+
+<style scoped>
+/* Now you can use the CSS variables */
+.styled-element {
+  background: var(--primary-color);
+  color: white;
+  padding: 10px;
+  border-radius: 8px;
+}
+
+.styled-button {
+  background: var(--secondary-color);
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.styled-button:hover {
+  background: var(--primary-color);
+  transition: background 0.3s;
+}
+</style>
+
+<script setup>
+import ChildComponent from './ChildComponent.vue'
+</script>
+
 <style scoped>
 .typing-indicator {
   display: flex;
