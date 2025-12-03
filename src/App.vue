@@ -370,10 +370,12 @@ const getCustomization = async () => {
       },
     })
     console.log(response.data)
-    if (response.data?.Settings.length > 0) {
-      customization.value = response.data.Settings
+    if (response.data?.Settings?.length > 0) {
+      customization.value = response.data.Settings[0]
+      console.log('Customization data:', customization.value)
       applyCustomizationStyles()
     } else {
+      console.warn('No settings found in response')
       applyDefaultStyles()
     }
     console.log('Customization data:', customization.value)
