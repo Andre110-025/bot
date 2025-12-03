@@ -364,8 +364,10 @@ const getCustomization = async () => {
 
   try {
     const response = await axios.get('https://assitance.storehive.com.ng/public/api/getsettings', {
-      website: props.website,
-      api: props.api,
+      params: {
+        website: props.website,
+        api: props.api,
+      },
     })
     console.log(response)
     if (response.data?.settings) {
@@ -374,7 +376,7 @@ const getCustomization = async () => {
     } else {
       applyDefaultStyles()
     }
-    console.log('Customization data:', data)
+    console.log('Customization data:', customization.value)
   } catch (err) {
     console.error('Error fetching customization:', err)
     applyDefaultStyles()
@@ -418,13 +420,12 @@ const applyDefaultStyles = () => {
   root.style.setProperty('--border-radius', '16px')
 }
 
-// ADD: Computed for avatar visibility
 const showAvatar = computed(() => {
-  return customization.value?.showavartar !== false
+  return customization.value?.showavartar !== false // Note: typo in "avatar"
 })
 
 const avatarUrl = computed(() => {
-  return customization.value?.avartar || 'https://cdn-icons-png.flaticon.com/512/2933/2933245.png'
+  return customization.value?.avartar || 'https://cdn-icons-png.flaticon.com/512/2933/2933245.png' // Note: typo in "avatar"
 })
 </script>
 
