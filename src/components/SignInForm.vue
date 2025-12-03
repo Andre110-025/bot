@@ -61,9 +61,9 @@ const handleForm = () => {
           viewBox="0 0 24 24"
         >
           <defs>
-            <linearGradient class="cdUser011011-Gradient" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stop-color="" />
-              <stop offset="100%" stop-color="" />
+            <linearGradient id="cdUser011011Gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="var(--primary-color)" />
+              <stop offset="100%" stop-color="var(--primary-color)" />
             </linearGradient>
           </defs>
 
