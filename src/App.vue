@@ -369,9 +369,9 @@ const getCustomization = async () => {
         api: props.api,
       },
     })
-    console.log(response)
-    if (response.data?.settings) {
-      customization.value = response.data.settings
+    console.log(response.data)
+    if (response.data?.Settings.length > 0) {
+      customization.value = response.data.Settings
       applyCustomizationStyles()
     } else {
       applyDefaultStyles()
