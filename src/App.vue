@@ -497,7 +497,7 @@ const avatarUrl = computed(() => {
                 >
                   <template v-if="msg.sender === 'AI'">
                     <div v-if="showAvatar" class="cdUser011011-avatar-bot">
-                      <img :src="avatarUrl" alt="Bot Avatar" />
+                      <img :src="avatarUrl" class="cdUser011011-avatar-img" />
                     </div>
                     <div v-else class="cdUser011011-avatar-bot">
                       <svg
@@ -959,21 +959,15 @@ const avatarUrl = computed(() => {
 }
 
 .cdUser011011-message.bot {
-  background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+  background: var(--secondary-color);
   color: #ffffff;
   border-bottom-left-radius: 4px;
-  box-shadow:
-    0 2px 8px rgba(17, 24, 39, 0.15),
-    0 1px 3px rgba(17, 24, 39, 0.1);
 }
 
 .cdUser011011-message.user {
-  background: linear-gradient(135deg, var(--secondary-color) 0%, var(--primary-color) 100%);
+  background: var(--primary-color);
   color: #ffffff;
   border-bottom-right-radius: 4px;
-  box-shadow:
-    0 2px 8px rgba(16, 185, 129, 0.25),
-    0 1px 3px rgba(16, 185, 129, 0.15);
 }
 
 /* .cdUser011011-wrapper.position-bottom-right {
