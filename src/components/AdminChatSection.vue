@@ -57,7 +57,7 @@ const saveMessages = () => {
 }
 
 const fetchInitialMessages = async () => {
-  if (!cleanWebsite) return
+  if (!props.website) return
   try {
     loading.value = true
     const url = `https://assitance.storehive.com.ng/public/api/chat/admin/session/${props.userId}`
