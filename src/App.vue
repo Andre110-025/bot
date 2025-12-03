@@ -353,6 +353,78 @@ onMounted(() => {
 onBeforeUnmount(() => {
   Object.values(charTimers).forEach((t) => clearTimeout(t))
 })
+
+const customization = ref(null)
+onMounted(async () => {
+  await getCustomization()
+})
+
+const getCustomization = async () => {
+  if (!props.api || !props.website) return
+
+  try {
+    const response = await axios.get('https://assitance.storehive.com.ng/public/api/getsettings', {
+      website: props.website,
+      api: props.api,
+    })
+    if (response.data?.settings) {
+      customization.value = response.data.settings
+      applyCustomizationStyles()
+    } else {
+      applyDefaultStyles()
+    }
+    console.log('Customization data:', data)
+  } catch (err) {
+    console.error('Error fetching customization:', err)
+    applyDefaultStyles()
+  }
+}
+
+const applyCustomizationStyles = () => {
+  const root = document.documentElement
+
+  // Set all variables
+  root.style.setProperty('--primary-color', customization.value.primarycolor || '#10b981')
+  root.style.setProperty('--secondary-color', customization.value.secondarycolor || '#059669')
+  root.style.setProperty('--bubble-size', `${customization.value.bubblesize || 64}px`)
+  root.style.setProperty('--popup-width', `${customization.value.popupwidth || 400}px`)
+  root.style.setProperty('--popup-height', `${customization.value.bubblewidth || 600}px`)
+  root.style.setProperty('--border-radius', `${customization.value.borderraduis || 16}px`)
+  console.log('📏 CSS Variables set:', {
+    primary: customization.value.primarycolor,
+    bubbleSize: customization.value.bubblesize,
+    position: customization.value.position,
+  })
+  const wrapper = document.querySelector('.cdUser011011-wrapper')
+  if (wrapper) {
+    wrapper.classList.remove(
+      'position-bottom-right',
+      'position-bottom-left',
+      'position-top-right',
+      'position-top-left',
+    )
+    wrapper.classList.add(`position-${customization.value.position || 'bottom-right'}`)
+  }
+}
+
+const applyDefaultStyles = () => {
+  const root = document.documentElement
+  root.style.setProperty('--primary-color', '#10b981')
+  root.style.setProperty('--secondary-color', '#059669')
+  root.style.setProperty('--bubble-size', '64px')
+  root.style.setProperty('--popup-width', '400px')
+  root.style.setProperty('--popup-height', '600px')
+  root.style.setProperty('--border-radius', '16px')
+}
+
+// ADD: Computed for avatar visibility
+const showAvatar = computed(() => {
+  return customization.value?.showavartar !== false
+})
+
+const avatarUrl = computed(() => {
+  return customization.value?.avartar || 'https://cdn-icons-png.flaticon.com/512/2933/2933245.png'
+})
 </script>
 
 <template>
@@ -374,7 +446,14 @@ onBeforeUnmount(() => {
           <div v-if="showPopup" class="cdUser011011-popup">
             <header class="cdUser011011-header">
               <div class="cdUser011011-header-left">
-                <div class="cdUser011011-avatar">
+                <div v-if="showAvatar" class="cdUser011011-avatar">
+                  <img
+                    :src="avatarUrl"
+                    class="w-full h-full object-cover rounded-lg"
+                    alt="Chatbot Avatar"
+                  />
+                </div>
+                <div v-else class="cdUser011011-avatar">
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
                     width="20"
@@ -417,7 +496,14 @@ onBeforeUnmount(() => {
                   "
                 >
                   <template v-if="msg.sender === 'AI'">
-                    <div class="cdUser011011-avatar-bot">
+                    <div v-if="showAvatar" class="cdUser011011-avatar-bot">
+                      <img
+                        :src="avatarUrl"
+                        class="w-full h-full object-cover rounded-full"
+                        alt="Bot Avatar"
+                      />
+                    </div>
+                    <div v-else class="cdUser011011-avatar-bot">
                       <svg
                         xmlns="http://www.w3.org/2000/svg"
                         width="20"
@@ -518,10 +604,16 @@ onBeforeUnmount(() => {
 </template>
 
 <style>
+:root {
+  --primary-color: #10b981;
+  --secondary-color: #059669;
+  --bubble-size: 64px;
+  --popup-width: 400px;
+  --popup-height: 600px;
+  --border-radius: 16px;
+}
+
 .cdUser011011-wrapper {
-  position: fixed;
-  bottom: 1.5rem;
-  right: 1.5rem;
   z-index: 9999;
   font-family:
     -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
@@ -537,12 +629,35 @@ onBeforeUnmount(() => {
   margin: 0;
   /* padding: 0; */
 }
+.cdUser011011-wrapper.position-bottom-right {
+  position: fixed;
+  bottom: 1.5rem;
+  right: 1.5rem;
+}
+
+.cdUser011011-wrapper.position-bottom-left {
+  position: fixed;
+  bottom: 1.5rem;
+  left: 1.5rem;
+}
+
+.cdUser011011-wrapper.position-top-right {
+  position: fixed;
+  top: 1.5rem;
+  right: 1.5rem;
+}
+
+.cdUser011011-wrapper.position-top-left {
+  position: fixed;
+  top: 1.5rem;
+  left: 1.5rem;
+}
 
 /* === Floating Bubble === */
 .cdUser011011-bubble {
-  width: 64px;
-  height: 64px;
-  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  width: var(--bubble-size);
+  height: var(--bubble-size);
+  background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
   border-radius: 50%;
   color: white;
   display: flex;
@@ -631,10 +746,10 @@ onBeforeUnmount(() => {
   position: absolute;
   bottom: 84px;
   right: 0;
-  width: 400px;
-  height: 600px;
+  width: var(--popup-width);
+  height: var(--popup-height);
   background: #ffffff;
-  border-radius: 16px;
+  border-radius: var(--border-radius);
   box-shadow:
     0 0 0 1px rgba(0, 0, 0, 0.05),
     0 20px 40px rgba(0, 0, 0, 0.1),
@@ -649,7 +764,7 @@ onBeforeUnmount(() => {
 
 /* === Header === */
 .cdUser011011-header {
-  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
   color: #fff;
   padding: 10px 15px;
   display: flex;
@@ -809,7 +924,7 @@ onBeforeUnmount(() => {
 }
 
 .cdUser011011-avatar-bot {
-  background: linear-gradient(135deg, #1f2937 0%, #111827 100%);
+  background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
   color: #fff;
   margin: 0 10px 0 0;
 }
@@ -844,7 +959,7 @@ onBeforeUnmount(() => {
 }
 
 .cdUser011011-message.bot {
-  background: linear-gradient(135deg, #1f2937 0%, #111827 100%);
+  background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
   color: #ffffff;
   border-bottom-left-radius: 4px;
   box-shadow:
@@ -853,7 +968,7 @@ onBeforeUnmount(() => {
 }
 
 .cdUser011011-message.user {
-  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  background: linear-gradient(135deg, var(--secondary-color) 0%, var(--primary-color) 100%);
   color: #ffffff;
   border-bottom-right-radius: 4px;
   box-shadow:
@@ -861,6 +976,25 @@ onBeforeUnmount(() => {
     0 1px 3px rgba(16, 185, 129, 0.15);
 }
 
+/* .cdUser011011-wrapper.position-bottom-right {
+  bottom: 1.5rem;
+  right: 1.5rem;
+}
+
+.cdUser011011-wrapper.position-bottom-left {
+  bottom: 1.5rem;
+  left: 1.5rem;
+}
+
+.cdUser011011-wrapper.position-top-right {
+  top: 1.5rem;
+  right: 1.5rem;
+}
+
+.cdUser011011-wrapper.position-top-left {
+  top: 1.5rem;
+  left: 1.5rem;
+} */
 /* === Typing Indicator === */
 .cdUser011011-typing-indicator {
   display: inline-flex;
