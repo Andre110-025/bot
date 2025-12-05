@@ -608,6 +608,36 @@ const avatarUrl = computed(() => {
                 class="cdUser011011-watermark-link"
                 @click.stop
               >
+                <!-- Optional logo/svg -->
+                <svg
+                  width="10"
+                  height="10"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    d="M12 2L2 7L12 12L22 7L12 2Z"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                  <path
+                    d="M2 17L12 22L22 17"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                  <path
+                    d="M2 12L12 17L22 12"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                </svg>
                 <span>Powered by</span>
                 <strong>chatbotconvo.com</strong>
               </a>
@@ -632,35 +662,40 @@ const avatarUrl = computed(() => {
 .cdUser011011-watermark {
   display: flex;
   justify-content: center;
-  padding: 10px 16px;
-  background: linear-gradient(to top, rgba(249, 250, 251, 0.8), transparent);
-  border-top: 1px solid rgba(229, 231, 235, 0.5);
-  backdrop-filter: blur(4px);
+  align-items: center;
+  padding: 6px 12px;
+  background: #f9fafb;
+  border-top: 1px solid #e5e7eb;
+  flex-shrink: 0;
 }
 
 .cdUser011011-watermark-link {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   gap: 4px;
   text-decoration: none;
-  font-size: 11px;
-  color: rgba(107, 114, 128, 0.7);
-  transition: all 0.2s ease;
+  font-size: 10px;
+  color: #6b7280;
+  font-weight: 500;
+  letter-spacing: 0.2px;
+  opacity: 0.7;
+  transition: opacity 0.2s ease;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
 
 .cdUser011011-watermark-link:hover {
+  opacity: 1;
   color: var(--primary-color);
-  transform: translateY(-1px);
+}
+
+.cdUser011011-watermark-link span {
+  font-weight: 400;
+  color: #9ca3af;
 }
 
 .cdUser011011-watermark-link strong {
   font-weight: 600;
-  color: rgba(0, 0, 0, 0.5);
-}
-
-.cdUser011011-watermark-link:hover strong {
-  color: var(--primary-color);
+  color: #4b5563;
 }
 
 .cdUser011011-wrapper {
