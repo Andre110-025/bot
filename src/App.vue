@@ -447,7 +447,7 @@ const avatarUrl = computed(() => {
         </div>
 
         <transition name="cdUser011011-fade">
-          <div v-if="showPopup" class="cdUser011011-popup">
+          <div v-if="showPopup" class="cdUser011011-popup-container">
             <header class="cdUser011011-header">
               <div class="cdUser011011-header-left">
                 <div v-if="showAvatar" class="cdUser011011-avatar">
@@ -658,7 +658,13 @@ const avatarUrl = computed(() => {
   --popup-height: 600px;
   --border-radius: 16px;
 }
-
+.cdUser011011-popup-container {
+  position: absolute;
+  bottom: 84px; /* Same as your popup's bottom position */
+  right: 0;
+  display: flex;
+  flex-direction: column;
+}
 .cdUser011011-watermark {
   display: flex;
   justify-content: center;
@@ -667,6 +673,12 @@ const avatarUrl = computed(() => {
   background: #f9fafb;
   border-top: 1px solid #e5e7eb;
   flex-shrink: 0;
+  /* Position it below the popup */
+  margin-top: 4px;
+  border-radius: 0 0 12px 12px;
+  /* Match popup width */
+  width: var(--popup-width);
+  box-sizing: border-box;
 }
 
 .cdUser011011-watermark-link {
@@ -828,22 +840,16 @@ const avatarUrl = computed(() => {
 
 /* === Chat Popup === */
 .cdUser011011-popup {
-  position: absolute;
-  bottom: 84px;
-  right: 0;
   width: var(--popup-width);
   height: var(--popup-height);
   background: #ffffff;
   border-radius: var(--border-radius);
-  box-shadow:
-    0 0 0 1px rgba(0, 0, 0, 0.05),
-    0 20px 40px rgba(0, 0, 0, 0.1),
-    0 10px 20px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
   display: flex;
   flex-direction: column;
   overflow: hidden;
   backdrop-filter: blur(10px);
-  margin: 0;
+  /* margin-bottom: 0; */
   padding: 0;
 }
 

@@ -331,6 +331,50 @@ onBeforeUnmount(() => {
 </template>
 
 <template>
+  <div class="cdUser011011-wrapper position-bottom-right" v-if="showBubble">
+    <div class="cdUser011011-chatbot">
+      <div class="cdUser011011-inner">
+        <!-- Bubble button -->
+        <div class="cdUser011011-bubble" @click="togglePopup">
+          <!-- SVG content -->
+        </div>
+
+        <transition name="cdUser011011-fade">
+          <!-- Wrap both popup and watermark in a container -->
+          <div v-if="showPopup" class="cdUser011011-popup-container">
+            <div class="cdUser011011-popup">
+              <!-- Your popup content (header, body, footer) -->
+              <header class="cdUser011011-header">
+                <!-- ... -->
+              </header>
+
+              <section class="cdUser011011-body">
+                <!-- ... -->
+              </section>
+
+              <footer class="cdUser011011-footer">
+                <!-- ... -->
+              </footer>
+            </div>
+
+            <!-- Watermark now positioned relative to the container -->
+            <div class="cdUser011011-watermark">
+              <a
+                href="https://chatbotconvo.com"
+                target="_blank"
+                class="cdUser011011-watermark-link"
+              >
+                <!-- SVG and text -->
+              </a>
+            </div>
+          </div>
+        </transition>
+      </div>
+    </div>
+  </div>
+</template>
+
+<template>
   <div class="child-component" :style="customStyles">
     <div class="styled-element">I'm styled with CSS variables!</div>
     <button class="styled-button">Click me</button>
@@ -359,6 +403,66 @@ const customStyles = computed(() => ({
 </script>
 
 <style scoped>
+/* Container for popup + watermark */
+.cdUser011011-popup-container {
+  position: absolute;
+  bottom: 84px; /* Same as your popup's bottom position */
+  right: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.cdUser011011-popup {
+  width: var(--popup-width);
+  height: var(--popup-height);
+  background: #ffffff;
+  border-radius: var(--border-radius);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  margin-bottom: 0; /* Remove bottom margin since watermark will handle spacing */
+}
+
+.cdUser011011-popup {
+  /* DELETE THESE 3 LINES: */
+  position: absolute;
+  bottom: 84px;
+  right: 0;
+
+  /* KEEP EVERYTHING ELSE: */
+  width: var(--popup-width);
+  height: var(--popup-height);
+  background: #ffffff;
+  border-radius: var(--border-radius);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  backdrop-filter: blur(10px);
+  padding: 0;
+}
+
+.cdUser011011-watermark {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 6px 12px;
+  background: #f9fafb;
+  border-top: 1px solid #e5e7eb;
+  flex-shrink: 0;
+  /* Position it below the popup */
+  margin-top: 4px;
+  border-radius: 0 0 12px 12px;
+  /* Match popup width */
+  width: var(--popup-width);
+  box-sizing: border-box;
+}
+
+/* Keep your existing watermark-link styles */
+.cdUser011011-watermark-link {
+  /* Your existing styles */
+}
 /* Now you can use the CSS variables */
 .styled-element {
   background: var(--primary-color);
