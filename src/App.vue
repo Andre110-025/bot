@@ -369,16 +369,16 @@ const getCustomization = async () => {
         api: props.api,
       },
     })
-    console.log(response.data)
+    // console.log(response.data)
     if (response.data?.Settings?.length > 0) {
       customization.value = response.data.Settings[0]
-      console.log('Customization data:', customization.value)
+      // console.log('Customization data:', customization.value)
       applyCustomizationStyles()
     } else {
       console.warn('No settings found in response')
       applyDefaultStyles()
     }
-    console.log('Customization data:', customization.value)
+    // console.log('Customization data:', customization.value)
   } catch (err) {
     console.error('Error fetching customization:', err)
     applyDefaultStyles()
@@ -395,11 +395,11 @@ const applyCustomizationStyles = () => {
   root.style.setProperty('--popup-width', `${customization.value.popupwidth || 400}px`)
   root.style.setProperty('--popup-height', `${customization.value.bubblewidth || 600}px`)
   root.style.setProperty('--border-radius', `${customization.value.borderraduis || 16}px`)
-  console.log('📏 CSS Variables set:', {
-    primary: customization.value.primarycolor,
-    bubbleSize: customization.value.bubblesize,
-    position: customization.value.position,
-  })
+  // console.log('📏 CSS Variables set:', {
+  //   primary: customization.value.primarycolor,
+  //   bubbleSize: customization.value.bubblesize,
+  //   position: customization.value.position,
+  // })
   const wrapper = document.querySelector('.cdUser011011-wrapper')
   if (wrapper) {
     wrapper.classList.remove(
@@ -717,7 +717,7 @@ const avatarUrl = computed(() => {
 }
 
 .cdUser011011-ping-static {
-  box-shadow: 0 0 4px rgba(52, 211, 153, 0.6);
+  box-shadow: 0 0 4px var(--secondary-color);
 }
 
 @keyframes cdUser011011-pingAnim {
@@ -939,7 +939,7 @@ const avatarUrl = computed(() => {
 }
 
 .cdUser011011-avatar-user {
-  background: var(--secondary-color);
+  background: color-mix(in srgb, var(--secondary-color) 30%, transparent);
   color: #fff;
   margin: 0 0 0 10px;
 }
@@ -968,7 +968,7 @@ const avatarUrl = computed(() => {
 }
 
 .cdUser011011-message.bot {
-  background: var(--secondary-color);
+  background: color-mix(in srgb, var(--secondary-color) 30%, transparent);
   color: #ffffff;
   border-bottom-left-radius: 4px;
 }
