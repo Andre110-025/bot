@@ -601,6 +601,17 @@ const avatarUrl = computed(() => {
                 </div>
               </div>
             </footer>
+            <div v-if="showPopup" class="cdUser011011-watermark">
+              <a
+                href="https://chatbotconvo.com"
+                target="_blank"
+                class="cdUser011011-watermark-link"
+                @click.stop
+              >
+                <span>Powered by</span>
+                <strong>chatbotconvo.com</strong>
+              </a>
+            </div>
           </div>
         </transition>
       </div>
@@ -616,6 +627,40 @@ const avatarUrl = computed(() => {
   --popup-width: 400px;
   --popup-height: 600px;
   --border-radius: 16px;
+}
+
+.cdUser011011-watermark {
+  display: flex;
+  justify-content: center;
+  padding: 10px 16px;
+  background: linear-gradient(to top, rgba(249, 250, 251, 0.8), transparent);
+  border-top: 1px solid rgba(229, 231, 235, 0.5);
+  backdrop-filter: blur(4px);
+}
+
+.cdUser011011-watermark-link {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  text-decoration: none;
+  font-size: 11px;
+  color: rgba(107, 114, 128, 0.7);
+  transition: all 0.2s ease;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+.cdUser011011-watermark-link:hover {
+  color: var(--primary-color);
+  transform: translateY(-1px);
+}
+
+.cdUser011011-watermark-link strong {
+  font-weight: 600;
+  color: rgba(0, 0, 0, 0.5);
+}
+
+.cdUser011011-watermark-link:hover strong {
+  color: var(--primary-color);
 }
 
 .cdUser011011-wrapper {
