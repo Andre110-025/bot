@@ -448,12 +448,31 @@ const avatarUrl = computed(() => {
 
         <transition name="cdUser011011-fade">
           <div v-if="showPopup" class="cdUser011011-popup-container">
-            <header class="cdUser011011-header">
-              <div class="cdUser011011-header-left">
-                <div v-if="showAvatar" class="cdUser011011-avatar">
-                  <img :src="avatarUrl" class="cdUser011011-avatar-img" />
+            <div class="cdUser011011-popup">
+              <header class="cdUser011011-header">
+                <div class="cdUser011011-header-left">
+                  <div v-if="showAvatar" class="cdUser011011-avatar">
+                    <img :src="avatarUrl" class="cdUser011011-avatar-img" />
+                  </div>
+                  <div v-else class="cdUser011011-avatar">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="20"
+                      height="20"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        fill="currentColor"
+                        d="M1 18q.225-2.675 1.638-4.925T6.4 9.5L4.55 6.3q-.15-.225-.075-.475T4.8 5.45q.2-.125.45-.05t.4.3L7.5 8.9Q9.65 8 12 8t4.5.9l1.85-3.2q.15-.225.4-.3t.45.05q.25.125.325.375t-.075.475L17.6 9.5q2.35 1.325 3.762 3.575T23 18zm6-2.75q.525 0 .888-.363T8.25 14t-.363-.888T7 12.75t-.888.363T5.75 14t.363.888t.887.362m10 0q.525 0 .888-.363T18.25 14t-.363-.888T17 12.75t-.888.363t-.362.887t.363.888t.887.362"
+                      />
+                    </svg>
+                  </div>
+                  <div>
+                    <h2 class="cdUser011011-title">Help Desk</h2>
+                    <p class="cdUser011011-subtitle">Your support assistant, ready to help</p>
+                  </div>
                 </div>
-                <div v-else class="cdUser011011-avatar">
+                <button class="cdUser011011-close" @click="togglePopup">
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
                     width="20"
@@ -462,145 +481,135 @@ const avatarUrl = computed(() => {
                   >
                     <path
                       fill="currentColor"
-                      d="M1 18q.225-2.675 1.638-4.925T6.4 9.5L4.55 6.3q-.15-.225-.075-.475T4.8 5.45q.2-.125.45-.05t.4.3L7.5 8.9Q9.65 8 12 8t4.5.9l1.85-3.2q.15-.225.4-.3t.45.05q.25.125.325.375t-.075.475L17.6 9.5q2.35 1.325 3.762 3.575T23 18zm6-2.75q.525 0 .888-.363T8.25 14t-.363-.888T7 12.75t-.888.363T5.75 14t.363.888t.887.362m10 0q.525 0 .888-.363T18.25 14t-.363-.888T17 12.75t-.888.363t-.362.887t.363.888t.887.362"
+                      d="M6.4 19L5 17.6l5.6-5.6L5 6.4L6.4 5l5.6 5.6L17.6 5L19 6.4L13.4 12l5.6 5.6l-1.4 1.4l-5.6-5.6z"
                     />
                   </svg>
-                </div>
-                <div>
-                  <h2 class="cdUser011011-title">Help Desk</h2>
-                  <p class="cdUser011011-subtitle">Your support assistant, ready to help</p>
-                </div>
-              </div>
-              <button class="cdUser011011-close" @click="togglePopup">
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24">
-                  <path
-                    fill="currentColor"
-                    d="M6.4 19L5 17.6l5.6-5.6L5 6.4L6.4 5l5.6 5.6L17.6 5L19 6.4L13.4 12l5.6 5.6l-1.4 1.4l-5.6-5.6z"
-                  />
-                </svg>
-              </button>
-            </header>
+                </button>
+              </header>
 
-            <SignInForm
-              v-if="!showChat"
-              @form-complete="handleFormComplete"
-              :primary-color="customization.value?.primarycolor"
-            />
-
-            <section v-else ref="chatContainer" class="cdUser011011-body">
-              <div v-if="showUserBotChat" class="cdUser011011-messages-container">
-                <div
-                  v-for="(msg, index) in messages"
-                  :key="index"
-                  class="cdUser011011-message-row"
-                  :class="
-                    msg.sender === 'AI' ? 'cdUser011011-message-left' : 'cdUser011011-message-right'
-                  "
-                >
-                  <template v-if="msg.sender === 'AI'">
-                    <div v-if="showAvatar" class="cdUser011011-avatar-bot">
-                      <img :src="avatarUrl" class="cdUser011011-avatar-img" />
-                    </div>
-                    <div v-else class="cdUser011011-avatar-bot">
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        width="20"
-                        height="20"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          fill="currentColor"
-                          d="M1 18q.225-2.675 1.638-4.925T6.4 9.5L4.55 6.3q-.15-.225-.075-.475T4.8 5.45q.2-.125.45-.05t.4.3L7.5 8.9Q9.65 8 12 8t4.5.9l1.85-3.2q.15-.225.4-.3t.45.05q.25.125.325.375t-.075.475L17.6 9.5q2.35 1.325 3.762 3.575T23 18zm6-2.75q.525 0 .888-.363T8.25 14t-.363-.888T7 12.75t-.888.363T5.75 14t.363.888t.887.362m10 0q.525 0 .888-.363T18.25 14t-.363-.888T17 12.75t-.888.363t-.362.887t.363.888t.887.362"
-                        />
-                      </svg>
-                    </div>
-
-                    <div v-if="!msg.isButton" class="cdUser011011-message bot">
-                      <span v-if="msg.isThinking" class="cdUser011011-typing-indicator">
-                        <span class="cdUser011011-typing-dot"></span>
-                        <span class="cdUser011011-typing-dot"></span>
-                        <span class="cdUser011011-typing-dot"></span>
-                      </span>
-                      <span
-                        v-else-if="typingMessageIndex === index"
-                        class="cdUser011011-chat-message"
-                        v-html="formatMessage(displayedTexts[index] || '')"
-                      >
-                      </span>
-                      <span
-                        v-else
-                        class="cdUser011011-chat-message"
-                        v-html="formatMessage(msg.text)"
-                      >
-                      </span>
-                    </div>
-
-                    <div v-else class="cdUser011011-message bot">
-                      <button
-                        class="cdUser011011-fallback-btn"
-                        @click="sendToAdmin(msg.triggeringMessage)"
-                      >
-                        Chat with a representative
-                      </button>
-                    </div>
-                  </template>
-
-                  <template v-else>
-                    <div class="cdUser011011-message user">{{ msg.text }}</div>
-                    <div class="cdUser011011-avatar-user">
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        width="20"
-                        height="20"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          fill="currentColor"
-                          d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10s10-4.48 10-10S17.52 2 12 2m0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3s-3-1.34-3-3s1.34-3 3-3m0 14.2a7.2 7.2 0 0 1-6-3.22c.03-1.99 4-3.08 6-3.08c1.99 0 5.97 1.09 6 3.08a7.2 7.2 0 0 1-6 3.22"
-                        />
-                      </svg>
-                    </div>
-                  </template>
-                </div>
-              </div>
-
-              <AdminChatSection
-                v-else
-                :userId="userId"
-                :api="props.api"
-                :website="props.website"
+              <SignInForm
+                v-if="!showChat"
+                @form-complete="handleFormComplete"
                 :primary-color="customization.value?.primarycolor"
-                :secondary-color="customization.value?.secondarycolor"
               />
-            </section>
 
-            <footer class="cdUser011011-footer">
-              <div class="cdUser011011-footer-main" v-if="showUserBotChat">
-                <div class="cdUser011011-input-wrapper">
-                  <input
-                    v-model="userInput"
-                    @keyup.enter="sendMessage"
-                    type="text"
-                    placeholder="Type your message..."
-                    class="cdUser011011-footer-input"
-                  />
-                  <button
-                    class="cdUser011011-footer-send"
-                    @click="sendMessage"
-                    :disabled="!userInput.trim()"
+              <section v-else ref="chatContainer" class="cdUser011011-body">
+                <div v-if="showUserBotChat" class="cdUser011011-messages-container">
+                  <div
+                    v-for="(msg, index) in messages"
+                    :key="index"
+                    class="cdUser011011-message-row"
+                    :class="
+                      msg.sender === 'AI'
+                        ? 'cdUser011011-message-left'
+                        : 'cdUser011011-message-right'
+                    "
                   >
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      width="18"
-                      height="18"
-                      viewBox="0 0 24 24"
-                    >
-                      <path fill="currentColor" d="M3 20v-6l8-2l-8-2V4l19 8z" />
-                    </svg>
-                  </button>
+                    <template v-if="msg.sender === 'AI'">
+                      <div v-if="showAvatar" class="cdUser011011-avatar-bot">
+                        <img :src="avatarUrl" class="cdUser011011-avatar-img" />
+                      </div>
+                      <div v-else class="cdUser011011-avatar-bot">
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          width="20"
+                          height="20"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            fill="currentColor"
+                            d="M1 18q.225-2.675 1.638-4.925T6.4 9.5L4.55 6.3q-.15-.225-.075-.475T4.8 5.45q.2-.125.45-.05t.4.3L7.5 8.9Q9.65 8 12 8t4.5.9l1.85-3.2q.15-.225.4-.3t.45.05q.25.125.325.375t-.075.475L17.6 9.5q2.35 1.325 3.762 3.575T23 18zm6-2.75q.525 0 .888-.363T8.25 14t-.363-.888T7 12.75t-.888.363T5.75 14t.363.888t.887.362m10 0q.525 0 .888-.363T18.25 14t-.363-.888T17 12.75t-.888.363t-.362.887t.363.888t.887.362"
+                          />
+                        </svg>
+                      </div>
+
+                      <div v-if="!msg.isButton" class="cdUser011011-message bot">
+                        <span v-if="msg.isThinking" class="cdUser011011-typing-indicator">
+                          <span class="cdUser011011-typing-dot"></span>
+                          <span class="cdUser011011-typing-dot"></span>
+                          <span class="cdUser011011-typing-dot"></span>
+                        </span>
+                        <span
+                          v-else-if="typingMessageIndex === index"
+                          class="cdUser011011-chat-message"
+                          v-html="formatMessage(displayedTexts[index] || '')"
+                        >
+                        </span>
+                        <span
+                          v-else
+                          class="cdUser011011-chat-message"
+                          v-html="formatMessage(msg.text)"
+                        >
+                        </span>
+                      </div>
+
+                      <div v-else class="cdUser011011-message bot">
+                        <button
+                          class="cdUser011011-fallback-btn"
+                          @click="sendToAdmin(msg.triggeringMessage)"
+                        >
+                          Chat with a representative
+                        </button>
+                      </div>
+                    </template>
+
+                    <template v-else>
+                      <div class="cdUser011011-message user">{{ msg.text }}</div>
+                      <div class="cdUser011011-avatar-user">
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          width="20"
+                          height="20"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            fill="currentColor"
+                            d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10s10-4.48 10-10S17.52 2 12 2m0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3s-3-1.34-3-3s1.34-3 3-3m0 14.2a7.2 7.2 0 0 1-6-3.22c.03-1.99 4-3.08 6-3.08c1.99 0 5.97 1.09 6 3.08a7.2 7.2 0 0 1-6 3.22"
+                          />
+                        </svg>
+                      </div>
+                    </template>
+                  </div>
                 </div>
-              </div>
-            </footer>
+
+                <AdminChatSection
+                  v-else
+                  :userId="userId"
+                  :api="props.api"
+                  :website="props.website"
+                  :primary-color="customization.value?.primarycolor"
+                  :secondary-color="customization.value?.secondarycolor"
+                />
+              </section>
+
+              <footer class="cdUser011011-footer">
+                <div class="cdUser011011-footer-main" v-if="showUserBotChat">
+                  <div class="cdUser011011-input-wrapper">
+                    <input
+                      v-model="userInput"
+                      @keyup.enter="sendMessage"
+                      type="text"
+                      placeholder="Type your message..."
+                      class="cdUser011011-footer-input"
+                    />
+                    <button
+                      class="cdUser011011-footer-send"
+                      @click="sendMessage"
+                      :disabled="!userInput.trim()"
+                    >
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="18"
+                        height="18"
+                        viewBox="0 0 24 24"
+                      >
+                        <path fill="currentColor" d="M3 20v-6l8-2l-8-2V4l19 8z" />
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+              </footer>
+            </div>
             <div v-if="showPopup" class="cdUser011011-watermark">
               <a
                 href="https://chatbotconvo.com"
