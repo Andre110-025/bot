@@ -9,7 +9,14 @@ const props = defineProps({
   userId: { type: String, required: true },
   api: { type: String, required: true },
   website: { type: String, required: true },
+  primaryColor: { type: String, required: true },
+  secondaryColor: { type: String, required: true },
 })
+
+const customStyles = computed(() => ({
+  '--primary-color': props.primaryColor,
+  '--secondary-color': props.secondaryColor,
+}))
 
 console.log('userId prop:', props.userId)
 
@@ -230,7 +237,11 @@ onBeforeUnmount(() => {
   <div class="cdUser011011-chat-container">
     <div class="cdUser011011-chat-header">
       <div class="cdUser011011-header-left">
-        <div class="cdUser011011-status-dot" :class="{ active: isConnected }"></div>
+        <div
+          class="cdUser011011-status-dot"
+          :class="{ active: isConnected }"
+          :style="customStyles"
+        ></div>
         <span class="cdUser011011-header-title">Admin Chat</span>
       </div>
       <span class="cdUser011011-status-text">{{ statusText }}</span>
@@ -258,7 +269,11 @@ onBeforeUnmount(() => {
           </div>
 
           <div class="cdUser011011-message-row" :class="getMessageAlignment(msg)">
-            <div class="cdUser011011-message-bubble" :class="getMessageAlignment(msg)">
+            <div
+              class="cdUser011011-message-bubble"
+              :class="getMessageAlignment(msg)"
+              :style="customStyles"
+            >
               <p>{{ msg.message }}</p>
               <span class="cdUser011011-time">{{ formatTime(msg.timestamp) }}</span>
             </div>
@@ -274,7 +289,7 @@ onBeforeUnmount(() => {
         </template>
 
         <div v-if="loading" class="cdUser011011-loading-state">
-          <div class="cdUser011011-spinner"></div>
+          <div class="cdUser011011-spinner" :style="customStyles"></div>
           <p>Loading messages...</p>
         </div>
 
@@ -305,11 +320,13 @@ onBeforeUnmount(() => {
         placeholder="Type a message..."
         :disabled="sending || !isConnected"
         class="cdUser011011-message-input"
+        :style="customStyles"
       />
       <button
         @click="sendMessage"
         class="cdUser011011-send-btn"
         :disabled="!newMessage.trim() || sending || !isConnected"
+        :style="customStyles"
       >
         <svg
           v-if="!sending"
@@ -412,7 +429,7 @@ onBeforeUnmount(() => {
 }
 
 .cdUser011011-status-dot.active {
-  background: #10b981;
+  background: var(--primary-color);
   box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.2);
 }
 
@@ -516,7 +533,7 @@ onBeforeUnmount(() => {
 }
 
 .cdUser011011-message-bubble.user {
-  background: #009970;
+  background: var(--primary-color);
   color: #ffffff;
   border-bottom-right-radius: 4px;
 }
@@ -547,7 +564,7 @@ onBeforeUnmount(() => {
   width: 32px;
   height: 32px;
   border: 2px solid #e5e7eb;
-  border-top-color: #009970;
+  border-top-color: var(--primary-color);
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
 }
@@ -614,7 +631,7 @@ onBeforeUnmount(() => {
 }
 
 .cdUser0110110-message-input:focus {
-  border-color: #009970;
+  border-color: var(--primary-color);
   background: #ffffff;
   box-shadow: 0 0 0 3px rgba(0, 153, 112, 0.08);
 }
@@ -631,7 +648,7 @@ onBeforeUnmount(() => {
 .cdUser011011-send-btn {
   width: 44px;
   height: 44px;
-  background: #009970;
+  background: var(--primary-color);
   color: white;
   border: none;
   border-radius: 50%;
@@ -644,7 +661,7 @@ onBeforeUnmount(() => {
 }
 
 .cdUser011011-send-btn:hover:not(:disabled) {
-  background: #00805d;
+  background: var(--primary-color);
   transform: scale(1.05);
 }
 

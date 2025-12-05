@@ -564,7 +564,14 @@ const avatarUrl = computed(() => {
                 </div>
               </div>
 
-              <AdminChatSection v-else :userId="userId" :api="props.api" :website="props.website" />
+              <AdminChatSection
+                v-else
+                :userId="userId"
+                :api="props.api"
+                :website="props.website"
+                :primary-color="customization.value?.primarycolor"
+                :secondary-color="customization.value?.secondarycolor"
+              />
             </section>
 
             <footer class="cdUser011011-footer">
