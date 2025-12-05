@@ -196,7 +196,12 @@ onMounted(async () => {
     const data = JSON.parse(stored)
     if (!data.timestamp || Date.now() - data.timestamp > oneDay) {
       localStorage.removeItem(`chatMessages_${props.userId}`)
+      localStorage.removeItem('adminMode')
+
+      // window.location.reload()
       await fetchInitialMessages()
+      emit('session-expired')
+      return
     } else {
       chatMessages.value = data.chatMessages
       await nextTick()

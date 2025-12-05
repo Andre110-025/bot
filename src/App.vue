@@ -10,7 +10,9 @@ import { useChatNotifications } from './composables/useChatNotifications'
 // nextTick: waits for the DOM to update after a reactive change.
 const showPopup = ref(false)
 const userInput = ref('')
-const messages = ref([{ text: 'Hey there, I’m NexDre. How can I help you today?', sender: 'AI' }])
+const messages = ref([
+  { text: 'Hey there, I’m Chatbot convo. How can I help you today?', sender: 'AI' },
+])
 const typingMessageIndex = ref(-1)
 const displayedTexts = ref({}) // this is the Text being typed per message, for animation
 const chatContainer = ref(null)
@@ -36,10 +38,10 @@ const props = defineProps({
 
 const { hasUnreadMessages, unreadCount, clearUnreadMessages } = useChatNotifications()
 const userId = ref('')
-onMounted(() => {
-  userId.value = getUserId(props.website)
-  console.log('UserID:', userId.value)
-})
+// onMounted(() => {
+//   userId.value = getUserId(props.website)
+//   console.log('UserID:', userId.value)
+// })
 // const userId = ref(localStorage.getItem('userId') || '')
 
 // onMounted(() => {
@@ -105,12 +107,12 @@ watch(displayedTexts, scrollToBottom, { deep: true })
 
 // saves all messages to local storage to create an history
 const saveMessages = () => {
-  if (!userId) return
+  if (!userId.value) return
   const payload = {
     timestamp: Date.now(),
     messages: messages.value,
   }
-  localStorage.setItem(`messages_${userId}`, JSON.stringify(payload))
+  localStorage.setItem(`messages_${userId.value}`, JSON.stringify(payload))
 }
 
 // const saveMessages = () => {
@@ -243,7 +245,7 @@ async function getGeminiResponse(userText) {
         // user_email: null,
       },
     )
-    console.log('[Gemini Response conversation_id]:', userId.value)
+    // console.log('[Gemini Response conversation_id]:', userId.value)
     return response.data.data.response
   } catch (err) {
     console.error('Error calling Gemini API:', err)
@@ -253,32 +255,95 @@ async function getGeminiResponse(userText) {
 
 const showBubble = ref(false)
 
-onMounted(() => {
-  setTimeout(() => {
-    showBubble.value = true
-  }, 3000)
-})
+// onMounted(() => {
+//   setTimeout(() => {
+//     showBubble.value = true
+//   }, 3000)
+// })
 
 const showChat = ref(false)
 
-onMounted(() => {
+const clearAllExpiredSessions = () => {
+  const now = Date.now()
+  const oneDay = 24 * 60 * 60 * 1000
+
+  // console.log('Clearing expired sessions...')
+
   const storedUser = localStorage.getItem('chatUser')
-
   if (storedUser) {
-    const data = JSON.parse(storedUser)
-
-    if (Date.now() > data.expiresAt) {
-      // console.log('Token expired — clearing data')
+    try {
+      const data = JSON.parse(storedUser)
+      if (now > data.expiresAt) {
+        // console.log('Removing expired chatUser')
+        localStorage.removeItem('chatUser')
+      }
+    } catch (e) {
       localStorage.removeItem('chatUser')
-      showChat.value = false
-    } else {
-      // console.log('Valid token — skip form')
-      showChat.value = true
     }
-  } else {
-    showChat.value = false
   }
-})
+
+  if (userId.value) {
+    const storedMessages = localStorage.getItem(`messages_${userId.value}`)
+    if (storedMessages) {
+      try {
+        const data = JSON.parse(storedMessages)
+        if (!data.timestamp || now - data.timestamp > oneDay) {
+          // console.log('Removing expired bot messages')
+          localStorage.removeItem(`messages_${userId.value}`)
+        }
+      } catch (e) {
+        localStorage.removeItem(`messages_${userId.value}`)
+      }
+    }
+  }
+
+  const adminMode = localStorage.getItem('adminMode')
+  if (adminMode) {
+    try {
+      const data = JSON.parse(adminMode)
+      if (now > data.expiresAt) {
+        // console.log('Removing expired adminMode')
+        localStorage.removeItem('adminMode')
+      }
+    } catch (e) {
+      localStorage.removeItem('adminMode')
+    }
+  }
+
+  if (userId.value) {
+    const storedAdminMessages = localStorage.getItem(`chatMessages_${userId.value}`)
+    if (storedAdminMessages) {
+      try {
+        const data = JSON.parse(storedAdminMessages)
+        if (!data.timestamp || now - data.timestamp > oneDay) {
+          // console.log('Removing expired admin messages')
+          localStorage.removeItem(`chatMessages_${userId.value}`)
+        }
+      } catch (e) {
+        localStorage.removeItem(`chatMessages_${userId.value}`)
+      }
+    }
+  }
+}
+
+// onMounted(() => {
+//   const storedUser = localStorage.getItem('chatUser')
+
+//   if (storedUser) {
+//     const data = JSON.parse(storedUser)
+
+//     if (Date.now() > data.expiresAt) {
+//       // console.log('Token expired — clearing data')
+//       localStorage.removeItem('chatUser')
+//       showChat.value = false
+//     } else {
+//       // console.log('Valid token — skip form')
+//       showChat.value = true
+//     }
+//   } else {
+//     showChat.value = false
+//   }
+// })
 
 const handleFormComplete = () => {
   showChat.value = true
@@ -312,8 +377,8 @@ const sendToAdmin = async (userMessage = '') => {
     start_admin_chat: true,
     user_email: userEmail,
   })
-  console.log('[Sending to Admin] conversation_id:', userId.value)
-  console.log(userEmail)
+  // console.log('[Sending to Admin] conversation_id:', userId.value)
+  // console.log(userEmail)
   localStorage.setItem(
     'adminMode',
     JSON.stringify({
@@ -323,36 +388,36 @@ const sendToAdmin = async (userMessage = '') => {
   )
 }
 
-onMounted(() => {
-  const saved = localStorage.getItem('adminMode')
-  if (saved) {
-    const data = JSON.parse(saved)
-    if (Date.now() < data.expiresAt) {
-      showUserBotChat.value = false
-    } else {
-      localStorage.removeItem('adminMode')
-    }
-  }
-})
+// onMounted(() => {
+//   const saved = localStorage.getItem('adminMode')
+//   if (saved) {
+//     const data = JSON.parse(saved)
+//     if (Date.now() < data.expiresAt) {
+//       showUserBotChat.value = false
+//     } else {
+//       localStorage.removeItem('adminMode')
+//     }
+//   }
+// })
 
-onMounted(() => {
-  const stored = localStorage.getItem(`messages_${userId}`)
-  const oneDay = 1 * 24 * 60 * 60 * 1000
+// onMounted(() => {
+//   const stored = localStorage.getItem(`messages_${userId}`)
+//   const oneDay = 1 * 24 * 60 * 60 * 1000
 
-  if (stored) {
-    const data = JSON.parse(stored)
-    if (!data.timestamp || Date.now() - data.timestamp > oneDay) {
-      localStorage.removeItem(`messages_${userId}`)
-      messages.value = [{ text: 'Hey there, I’m NexDre. How can I help you today?', sender: 'AI' }]
-    } else {
-      messages.value = data.messages
-    }
-  }
-})
+//   if (stored) {
+//     const data = JSON.parse(stored)
+//     if (!data.timestamp || Date.now() - data.timestamp > oneDay) {
+//       localStorage.removeItem(`messages_${userId}`)
+//       messages.value = [{ text: 'Hey there, I’m NexDre. How can I help you today?', sender: 'AI' }]
+//     } else {
+//       messages.value = data.messages
+//     }
+//   }
+// })
 
-onBeforeUnmount(() => {
-  Object.values(charTimers).forEach((t) => clearTimeout(t))
-})
+// onBeforeUnmount(() => {
+//   Object.values(charTimers).forEach((t) => clearTimeout(t))
+// })
 
 const customization = ref(null)
 onMounted(async () => {
@@ -428,6 +493,85 @@ const showAvatar = computed(() => {
 
 const avatarUrl = computed(() => {
   return customization.value?.avartar || 'https://cdn-icons-png.flaticon.com/512/2933/2933245.png' // Note: typo in "avatar"
+})
+
+const handleSessionExpired = () => {
+  showUserBotChat.value = true // Switch back to bot chat
+}
+
+onMounted(() => {
+  // 1. Get user ID
+  userId.value = getUserId(props.website)
+  console.log('UserID:', userId.value)
+
+  clearAllExpiredSessions()
+
+  const storedUser = localStorage.getItem('chatUser')
+  if (storedUser) {
+    try {
+      const data = JSON.parse(storedUser)
+      if (Date.now() > data.expiresAt) {
+        // Already cleared by clearAllExpiredSessions, show form
+        showChat.value = false
+      } else {
+        showChat.value = true
+      }
+    } catch (e) {
+      showChat.value = false
+    }
+  } else {
+    showChat.value = false
+  }
+
+  // 4. Check admin mode
+  const adminMode = localStorage.getItem('adminMode')
+  if (adminMode) {
+    try {
+      const data = JSON.parse(adminMode)
+      if (Date.now() < data.expiresAt) {
+        showUserBotChat.value = false
+      } else {
+        // Already cleared by clearAllExpiredSessions
+        showUserBotChat.value = true
+      }
+    } catch (e) {
+      showUserBotChat.value = true
+    }
+  }
+
+  // 5. Load bot messages if any exist
+  const storedMessages = localStorage.getItem(`messages_${userId.value}`)
+  const oneDay = 24 * 60 * 60 * 1000
+  if (storedMessages) {
+    try {
+      const data = JSON.parse(storedMessages)
+      if (!data.timestamp || Date.now() - data.timestamp > oneDay) {
+        // Already cleared by clearAllExpiredSessions
+        messages.value = [
+          { text: 'Hey there, I’m Chatbot convo. How can I help you today?', sender: 'AI' },
+        ]
+      } else {
+        messages.value = data.messages
+      }
+    } catch (e) {
+      messages.value = [
+        { text: 'Hey there, I’m Chatbot convo. How can I help you today?', sender: 'AI' },
+      ]
+    }
+  }
+
+  // 6. Show bubble after delay
+  setTimeout(() => {
+    showBubble.value = true
+  }, 3000)
+
+  // 7. Fetch customization
+  getCustomization()
+})
+
+// Clean up timers
+onBeforeUnmount(() => {
+  Object.values(charTimers).forEach((t) => clearTimeout(t))
 })
 </script>
 
@@ -579,6 +723,7 @@ const avatarUrl = computed(() => {
                   :website="props.website"
                   :primary-color="customization.value?.primarycolor"
                   :secondary-color="customization.value?.secondarycolor"
+                  @session-expired="handleSessionExpired"
                 />
               </section>
 
@@ -850,8 +995,8 @@ const avatarUrl = computed(() => {
   background: #ffffff;
   border-radius: var(--border-radius);
   box-shadow:
-    0 4px 8px 0 rgba(0, 0, 0, 0.2),
-    0 6px 20px 0 rgba(0, 0, 0, 0.19);
+    0 2px 6px 0 rgba(0, 0, 0, 0.2),
+    0 4px 18px 0 rgba(0, 0, 0, 0.16);
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -1098,13 +1243,14 @@ const avatarUrl = computed(() => {
   gap: 4px;
   padding: 2px 0;
   margin: 0;
+  color: var(--primary-color);
 }
 
 .cdUser011011-typing-dot {
   display: inline-block;
   width: 8px;
   height: 8px;
-  background: rgba(255, 255, 255, 0.6);
+  background: currentColor;
   border-radius: 50%;
   animation: cdUser011011-typingBounce 1.4s infinite ease-in-out both;
   margin: 0;
