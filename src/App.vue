@@ -967,7 +967,7 @@ const avatarUrl = computed(() => {
 }
 
 .cdUser011011-message.bot {
-  background: var(--secondary-color); /* Fallback */
+  /* background: var(--secondary-color); Fallback */
   background: color-mix(in srgb, var(--secondary-color) 12.5%, transparent);
   color: #333;
   border-bottom-left-radius: 4px;
