@@ -379,7 +379,28 @@ onBeforeUnmount(() => {
     <div class="styled-element">I'm styled with CSS variables!</div>
     <button class="styled-button">Click me</button>
   </div>
+
+  <div v-if="showPopup" class="cdUser011011-popup-container">
+    <!-- ADD THIS DIV ↓ -->
+    <div class="cdUser011011-popup">
+      <header class="cdUser011011-header">...</header>
+
+      <SignInForm v-if="!showChat" />
+
+      <section v-else ref="chatContainer" class="cdUser011011-body">...</section>
+
+      <footer class="cdUser011011-footer">...</footer>
+    </div>
+    <!-- ADD THIS DIV ↑ -->
+
+    <div v-if="showPopup" class="cdUser011011-watermark">...</div>
+  </div>
 </template>
+
+.cdUser011011-popup-container { position: absolute; bottom: 50px; right: 0; display: flex;
+flex-direction: column; } .cdUser011011-watermark { display: flex; justify-content: center;
+align-items: center; padding: 6px 12px; border-top: 1px solid #e5e7eb; flex-shrink: 0; margin-top:
+4px; border-radius: 0 0 12px 12px; width: var(--popup-width); box-sizing: border-box; }
 
 <script setup>
 import { computed } from 'vue'

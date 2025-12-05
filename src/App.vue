@@ -423,7 +423,7 @@ const applyDefaultStyles = () => {
 }
 
 const showAvatar = computed(() => {
-  return customization.value?.showavartar !== false // Note: typo in "avatar"
+  return customization.value?.showavartar !== false
 })
 
 const avatarUrl = computed(() => {
@@ -669,7 +669,7 @@ const avatarUrl = computed(() => {
 }
 .cdUser011011-popup-container {
   position: absolute;
-  bottom: 84px; /* Same as your popup's bottom position */
+  bottom: 50px;
   right: 0;
   display: flex;
   flex-direction: column;
@@ -679,14 +679,10 @@ const avatarUrl = computed(() => {
   justify-content: center;
   align-items: center;
   padding: 6px 12px;
-  background: #f9fafb;
   border-top: 1px solid #e5e7eb;
   flex-shrink: 0;
-  /* Position it below the popup */
   margin-top: 4px;
   border-radius: 0 0 12px 12px;
-  /* Match popup width */
-  width: var(--popup-width);
   box-sizing: border-box;
 }
 
@@ -853,7 +849,9 @@ const avatarUrl = computed(() => {
   height: var(--popup-height);
   background: #ffffff;
   border-radius: var(--border-radius);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  box-shadow:
+    0 4px 8px 0 rgba(0, 0, 0, 0.2),
+    0 6px 20px 0 rgba(0, 0, 0, 0.19);
   display: flex;
   flex-direction: column;
   overflow: hidden;
