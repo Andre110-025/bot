@@ -1319,7 +1319,7 @@ const avatarUrl = computed(() => {
 .cdUser011011-chat-message {
   line-height: 1.6;
   font-size: 15px;
-  color: #fff;
+  color: #333;
 }
 .cdUser011011-chat-message h1,
 h2,
