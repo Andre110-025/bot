@@ -939,7 +939,7 @@ const avatarUrl = computed(() => {
 }
 
 .cdUser011011-avatar-user {
-  background: color-mix(in srgb, var(--secondary-color) 12.5%, transparent);
+  background: var(--secondary-color);
   margin: 0 0 0 10px;
 }
 
@@ -967,8 +967,8 @@ const avatarUrl = computed(() => {
 }
 
 .cdUser011011-message.bot {
-  background: color-mix(in srgb, var(--secondary-color) 12.5%, transparent);
-  color: #000;
+  background: var(--secondary-color);
+  color: #fff;
   border-bottom-left-radius: 4px;
 }
 
@@ -1109,7 +1109,7 @@ const avatarUrl = computed(() => {
   width: 100%;
   padding: 0.875rem 3.5rem 0.875rem 1rem;
   border-radius: 12px;
-  border: 1.5px solid #10b1c6;
+  border: 1.5px solid var(--primary-color);
   font-size: 0.9375rem;
   outline: none;
   transition: all 0.2s ease;
@@ -1120,7 +1120,7 @@ const avatarUrl = computed(() => {
 }
 
 .cdUser011011-footer-input:focus {
-  border-color: #10b1c6;
+  border-color: var(--primary-color);
   background: #ffffff;
   box-shadow:
     0 0 0 3px rgba(16, 185, 129, 0.1),
