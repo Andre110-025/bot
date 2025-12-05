@@ -939,7 +939,7 @@ const avatarUrl = computed(() => {
 }
 
 .cdUser011011-avatar-user {
-  background: var(--secondary-color);
+  background: color-mix(in srgb, var(--secondary-color) 12.5%, transparent);
   margin: 0 0 0 10px;
 }
 
@@ -967,8 +967,9 @@ const avatarUrl = computed(() => {
 }
 
 .cdUser011011-message.bot {
-  background: var(--secondary-color);
-  color: #fff;
+  background: var(--secondary-color); /* Fallback */
+  background: color-mix(in srgb, var(--secondary-color) 12.5%, transparent);
+  color: #333;
   border-bottom-left-radius: 4px;
 }
 
