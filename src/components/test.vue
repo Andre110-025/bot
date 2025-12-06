@@ -356,6 +356,32 @@ const customStyles = computed(() => ({
   '--primary-color': props.primaryColor,
   '--secondary-color': props.secondaryColor,
 }))
+
+onMounted(() => {
+  // Clear expired sessions FIRST
+  clearAllExpiredSessions()
+
+  // Get userId
+  userId.value = getUserId(props.website)
+
+  // SIMPLE checks - NO expiration checks here!
+  showChat.value = !!localStorage.getItem('chatUser')
+
+  const adminMode = localStorage.getItem('adminMode')
+  showUserBotChat.value = !adminMode
+
+  const storedMessages = localStorage.getItem(`messages_${userId.value}`)
+  if (storedMessages) {
+    try {
+      const data = JSON.parse(storedMessages)
+      messages.value = data.messages || getDefaultMessage()
+    } catch {
+      messages.value = getDefaultMessage()
+    }
+  }
+
+  // Rest of your code...
+})
 </script>
 
 <style scoped>
