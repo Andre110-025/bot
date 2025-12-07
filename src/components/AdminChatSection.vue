@@ -1,6 +1,4 @@
 <script setup>
-// const emit = defineEmits(['session-expired'])
-
 import { ref, nextTick, onMounted, onBeforeUnmount, computed } from 'vue'
 import axios from 'axios'
 // import { getUserId } from './utils/userId'
@@ -20,7 +18,7 @@ const customStyles = computed(() => ({
   '--secondary-color': props.secondaryColor,
 }))
 
-// console.log('userId prop:', props.userId)
+console.log('userId prop:', props.userId)
 
 const { setUnreadMessage } = useChatNotifications()
 
@@ -191,67 +189,34 @@ const handleInputChange = () => {
 }
 
 onMounted(async () => {
-  console.log('🔄 AdminChatSection mounted')
-
-  // FIRST: Check if admin session is expired (24 hours)
-  const adminMode = localStorage.getItem('adminMode')
-  console.log('Admin mode in localStorage:', adminMode)
-
-  if (!adminMode) {
-    console.log('❌ No admin mode found, emitting session-expired')
-    emit('session-expired')
-    return
-  }
-
-  try {
-    const adminData = JSON.parse(adminMode)
-    // const twentyFourHours = 24 * 60 * 60 * 1000
-
-    console.log('Admin expires at:', new Date(adminData.expiresAt).toLocaleString())
-    console.log('Current time:', new Date().toLocaleString())
-
-    if (Date.now() > adminData.expiresAt) {
-      // console.log('⏰ Admin session expired! Clearing...')
-      localStorage.removeItem('adminMode')
-      localStorage.removeItem(`chatMessages_${props.userId}`)
-      emit('session-expired')
-      return
-    }
-    // console.log('✅ Admin session still valid')
-  } catch {
-    // console.log('❌ Corrupted admin mode, removing...')
-    localStorage.removeItem('adminMode')
-    localStorage.removeItem(`chatMessages_${props.userId}`)
-    emit('session-expired')
-    return
-  }
-
-  // SECOND: Check chat messages (24 hours)
   const stored = localStorage.getItem(`chatMessages_${props.userId}`)
-  const twentyFourHours = 24 * 60 * 60 * 1000
+  const oneDay = 1 * 24 * 60 * 60 * 1000
 
   if (stored) {
-    try {
-      const data = JSON.parse(stored)
-      if (!data.timestamp || Date.now() - data.timestamp > twentyFourHours) {
-        // console.log('🗑️ Removing old admin messages (>24h)')
-        localStorage.removeItem(`chatMessages_${props.userId}`)
-        // Don't emit here - adminMode might still be valid
-      } else {
-        // console.log('📨 Loading saved admin messages')
-        chatMessages.value = data.chatMessages || []
-        await nextTick()
-        scrollToBottom()
-      }
-    } catch {
+    const data = JSON.parse(stored)
+    if (!data.timestamp || Date.now() - data.timestamp > oneDay) {
       localStorage.removeItem(`chatMessages_${props.userId}`)
+      localStorage.removeItem('adminMode')
+
+      // window.location.reload()
+      await fetchInitialMessages()
+      emit('session-expired')
+      return
+    } else {
+      chatMessages.value = data.chatMessages
+      await nextTick()
+      scrollToBottom()
+      setTimeout(() => {
+        fetchInitialMessages()
+      }, 1000)
     }
+  } else {
+    await fetchInitialMessages()
+    await nextTick()
+    scrollToBottom()
   }
 
-  // THIRD: Fetch messages from server
-  await fetchInitialMessages()
-
-  // FOURTH: Initialize Ably
+  // Initialize Ably
   const isAblyInitialized = await initializeAbly()
   if (isAblyInitialized) {
     unsubscribeFromAbly = onAdminReply(props.userId, handleAdminReply)
@@ -264,48 +229,6 @@ onMounted(async () => {
     })
   }
 })
-
-// onMounted(async () => {
-//   const stored = localStorage.getItem(`chatMessages_${props.userId}`)
-//   const oneDay = 1 * 24 * 60 * 60 * 1000
-
-//   if (stored) {
-//     const data = JSON.parse(stored)
-//     if (!data.timestamp || Date.now() - data.timestamp > oneDay) {
-//       localStorage.removeItem(`chatMessages_${props.userId}`)
-//       localStorage.removeItem('adminMode')
-
-//       // window.location.reload()
-//       await fetchInitialMessages()
-//       emit('session-expired')
-//       return
-//     } else {
-//       chatMessages.value = data.chatMessages
-//       await nextTick()
-//       scrollToBottom()
-//       setTimeout(() => {
-//         fetchInitialMessages()
-//       }, 1000)
-//     }
-//   } else {
-//     await fetchInitialMessages()
-//     await nextTick()
-//     scrollToBottom()
-//   }
-
-//   // Initialize Ably
-//   const isAblyInitialized = await initializeAbly()
-//   if (isAblyInitialized) {
-//     unsubscribeFromAbly = onAdminReply(props.userId, handleAdminReply)
-
-//     typingUnsubscribe = onAdminTyping(props.userId, (isTyping) => {
-//       isAdminTyping.value = isTyping
-//       if (isTyping) {
-//         nextTick(() => scrollToBottom())
-//       }
-//     })
-//   }
-// })
 
 onBeforeUnmount(() => {
   unsubscribeFromAbly()
