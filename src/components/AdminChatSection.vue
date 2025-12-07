@@ -4,6 +4,7 @@ import axios from 'axios'
 // import { getUserId } from './utils/userId'
 import { useAbly } from '../composables/userAbly'
 import { useChatNotifications } from '../composables/useChatNotifications'
+const emit = defineEmits(['session-expired'])
 
 const props = defineProps({
   userId: { type: String, required: true },
