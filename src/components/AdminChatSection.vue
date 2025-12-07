@@ -186,6 +186,8 @@ const handleInputChange = () => {
 }
 
 const checkSessionValidity = () => {
+  console.log('🔍 checkSessionValidity called')
+
   // Check if main session is still valid
   if (!SessionManager.isSessionValid()) {
     console.log('⏰ Main session expired in admin chat')
@@ -195,11 +197,12 @@ const checkSessionValidity = () => {
 
   // Check if admin mode is still valid
   if (!SessionManager.isAdminModeActive()) {
-    console.log('⏰ Admin mode expired')
+    console.log('⏰ Admin mode expired in periodic check')
     emit('session-expired')
     return false
   }
 
+  console.log('✅ Session is still valid')
   return true
 }
 
@@ -278,6 +281,7 @@ onBeforeUnmount(() => {
   disconnectAbly()
   if (typingUnsubscribe) typingUnsubscribe()
   if (inputTypingTimeout) clearTimeout(inputTypingTimeout)
+  if (sessionCheckInterval) clearInterval(sessionCheckInterval)
 })
 </script>
 
