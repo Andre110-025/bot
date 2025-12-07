@@ -27,6 +27,9 @@ const loading = ref(false)
 const chatMessages = ref([])
 const newMessage = ref('')
 const isAdminTyping = ref(false)
+
+// Define at top level
+let sessionCheckInterval = null
 let typingUnsubscribe = null
 let inputTypingTimeout = null
 

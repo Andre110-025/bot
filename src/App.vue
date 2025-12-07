@@ -338,10 +338,19 @@ onMounted(() => {
   userId.value = sessionUserId
   showChat.value = hasValidSession
 
-  console.log('🚀 Initialized:', { userId: userId.value, hasValidSession })
+  console.log('🚀 Initialized:', {
+    userId: userId.value,
+    hasValidSession,
+    adminModeActive: SessionManager.isAdminModeActive(),
+  })
 
-  // 3. Check if admin mode is active
-  showUserBotChat.value = !SessionManager.isAdminModeActive()
+  // 3. Check if admin mode is active (but DON'T switch to it if session invalid)
+  if (hasValidSession && SessionManager.isAdminModeActive()) {
+    console.log('✅ Resuming admin mode from previous session')
+    showUserBotChat.value = false
+  } else {
+    showUserBotChat.value = true
+  }
 
   // 4. Load bot messages if in bot chat mode
   if (showUserBotChat.value && hasValidSession) {
