@@ -1,3 +1,6 @@
+// utils/sessionManager.js
+// Centralized session management
+
 const SESSION_DURATION = 24 * 60 * 60 * 1000 // 24 hours
 
 export const SessionManager = {
@@ -91,6 +94,7 @@ export const SessionManager = {
     }
 
     localStorage.setItem('adminMode', JSON.stringify(adminData))
+    console.log('✅ Admin mode enabled')
   },
 
   /**

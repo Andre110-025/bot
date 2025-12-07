@@ -590,6 +590,8 @@ onBeforeUnmount(() => {
   </div>
 </template>
 
+<!-- Keep all your existing styles -->
+
 <style>
 :root {
   --primary-color: #10b981;

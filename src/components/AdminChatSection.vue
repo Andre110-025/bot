@@ -65,13 +65,21 @@ const fetchInitialMessages = async () => {
       params: { website: props.website },
     })
 
-    chatMessages.value = (response.data.data?.messages || []).map((msg) => {
+    const fetchedMessages = (response.data.data?.messages || []).map((msg) => {
       const senderType = msg.sender_type === 'user' ? 'user' : 'admin'
       return {
         ...msg,
         sender: senderType,
       }
     })
+
+    // Only update if we got messages OR if we have no cached messages
+    if (fetchedMessages.length > 0 || chatMessages.value.length === 0) {
+      chatMessages.value = fetchedMessages
+      console.log(`📥 Fetched ${fetchedMessages.length} messages from server`)
+    } else {
+      console.log('📦 Keeping cached messages, server returned empty')
+    }
 
     saveMessages()
     await nextTick()
@@ -196,8 +204,11 @@ const checkSessionValidity = () => {
 }
 
 onMounted(async () => {
+  console.log('🚀 Admin chat mounted for userId:', props.userId)
+
   // First check if session is still valid
   if (!checkSessionValidity()) {
+    console.log('❌ Session invalid on mount')
     return
   }
 
@@ -215,7 +226,9 @@ onMounted(async () => {
         emit('session-expired')
         return
       } else {
-        chatMessages.value = data.chatMessages
+        // Load existing messages
+        chatMessages.value = data.chatMessages || []
+        console.log(`📥 Loaded ${chatMessages.value.length} cached messages`)
         await nextTick()
         scrollToBottom()
 
@@ -229,6 +242,8 @@ onMounted(async () => {
       await fetchInitialMessages()
     }
   } else {
+    // No cached messages, fetch from server
+    console.log('📡 Fetching messages from server...')
     await fetchInitialMessages()
   }
 
@@ -381,6 +396,8 @@ onBeforeUnmount(() => {
     </div>
   </div>
 </template>
+
+<!-- Keep all your existing styles -->
 
 <style scoped>
 .cdUser011011-typing-indicator {
