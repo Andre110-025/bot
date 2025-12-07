@@ -1,5 +1,5 @@
 <script setup>
-const emit = defineEmits(['session-expired'])
+// const emit = defineEmits(['session-expired'])
 
 import { ref, nextTick, onMounted, onBeforeUnmount, computed } from 'vue'
 import axios from 'axios'
