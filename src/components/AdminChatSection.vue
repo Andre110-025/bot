@@ -4,7 +4,6 @@ import axios from 'axios'
 // import { getUserId } from './utils/userId'
 import { useAbly } from '../composables/userAbly'
 import { useChatNotifications } from '../composables/useChatNotifications'
-const emit = defineEmits(['session-expired'])
 
 const props = defineProps({
   userId: { type: String, required: true },
@@ -190,26 +189,6 @@ const handleInputChange = () => {
 }
 
 onMounted(async () => {
-  // Check if session is expired BEFORE loading anything
-  const adminMode = localStorage.getItem('adminMode')
-  if (!adminMode) {
-    emit('session-expired')
-    return
-  }
-
-  try {
-    const adminData = JSON.parse(adminMode)
-    if (Date.now() > adminData.expiresAt) {
-      localStorage.removeItem('adminMode')
-      emit('session-expired')
-      return
-    }
-  } catch {
-    localStorage.removeItem('adminMode')
-    emit('session-expired')
-    return
-  }
-
   const stored = localStorage.getItem(`chatMessages_${props.userId}`)
   const oneDay = 1 * 24 * 60 * 60 * 1000
 
@@ -218,6 +197,9 @@ onMounted(async () => {
     if (!data.timestamp || Date.now() - data.timestamp > oneDay) {
       localStorage.removeItem(`chatMessages_${props.userId}`)
       localStorage.removeItem('adminMode')
+
+      // window.location.reload()
+      await fetchInitialMessages()
       emit('session-expired')
       return
     } else {
