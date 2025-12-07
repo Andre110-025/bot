@@ -193,7 +193,6 @@ onMounted(async () => {
   // Check if session is expired BEFORE loading anything
   const adminMode = localStorage.getItem('adminMode')
   if (!adminMode) {
-    // No admin mode, go back to bot chat
     emit('session-expired')
     return
   }
@@ -211,7 +210,6 @@ onMounted(async () => {
     return
   }
 
-  // Rest of your existing onMounted code...
   const stored = localStorage.getItem(`chatMessages_${props.userId}`)
   const oneDay = 1 * 24 * 60 * 60 * 1000
 
