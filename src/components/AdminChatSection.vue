@@ -397,8 +397,6 @@ onBeforeUnmount(() => {
   </div>
 </template>
 
-<!-- Keep all your existing styles -->
-
 <style scoped>
 .cdUser011011-typing-indicator {
   display: flex;
