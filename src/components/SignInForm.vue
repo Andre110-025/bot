@@ -40,8 +40,7 @@ const handleForm = () => {
     const token = Math.random().toString(36).substring(2) + Date.now().toString(36)
     // console.log('Generated token:', token)
 
-    // In the handleForm function, change from 1 day to 5 minutes
-    const expiresAt = Date.now() + 5 * 60 * 1000 // 5 minutes
+    const expiresAt = Date.now() + 24 * 60 * 60 * 1000
 
     localStorage.setItem('chatUser', JSON.stringify({ ...form, token, expiresAt }))
     loading.value = false
