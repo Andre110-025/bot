@@ -189,6 +189,28 @@ const handleInputChange = () => {
 }
 
 onMounted(async () => {
+  // Check if session is expired BEFORE loading anything
+  const adminMode = localStorage.getItem('adminMode')
+  if (!adminMode) {
+    // No admin mode, go back to bot chat
+    emit('session-expired')
+    return
+  }
+
+  try {
+    const adminData = JSON.parse(adminMode)
+    if (Date.now() > adminData.expiresAt) {
+      localStorage.removeItem('adminMode')
+      emit('session-expired')
+      return
+    }
+  } catch {
+    localStorage.removeItem('adminMode')
+    emit('session-expired')
+    return
+  }
+
+  // Rest of your existing onMounted code...
   const stored = localStorage.getItem(`chatMessages_${props.userId}`)
   const oneDay = 1 * 24 * 60 * 60 * 1000
 
@@ -197,9 +219,6 @@ onMounted(async () => {
     if (!data.timestamp || Date.now() - data.timestamp > oneDay) {
       localStorage.removeItem(`chatMessages_${props.userId}`)
       localStorage.removeItem('adminMode')
-
-      // window.location.reload()
-      await fetchInitialMessages()
       emit('session-expired')
       return
     } else {

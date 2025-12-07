@@ -263,58 +263,46 @@ const showBubble = ref(false)
 
 const showChat = ref(false)
 const clearAllExpiredSessions = () => {
-  // console.log('🧹 Starting session cleanup...')
-
   const now = Date.now()
 
-  // 🔥 ONLY CHECK chatUser - it's the SOURCE OF TRUTH
-  const storedUser = localStorage.getItem('chatUser')
+  // Clean up ALL expired sessions at once
+  const keysToCheck = [
+    'chatUser',
+    'adminMode',
+    ...Object.keys(localStorage).filter(
+      (key) => key.startsWith('messages_') || key.startsWith('chatMessages_'),
+    ),
+  ]
 
-  if (!storedUser) {
-    // No user session = clear all chat data
-    // console.log('🧹 No user session found, cleaning up orphaned chat data')
-    Object.keys(localStorage).forEach((key) => {
-      if (key.startsWith('messages_') || key.startsWith('chatMessages_') || key === 'adminMode') {
+  keysToCheck.forEach((key) => {
+    try {
+      const item = localStorage.getItem(key)
+      if (!item) return
+
+      const data = JSON.parse(item)
+
+      // Check if item has expiresAt and it's expired
+      if (data.expiresAt && now > data.expiresAt) {
         localStorage.removeItem(key)
-      }
-    })
-    return
-  }
+        console.log(`🧹 Removed expired: ${key}`)
 
-  try {
-    const userData = JSON.parse(storedUser)
-
-    // If main session expired, CLEAR EVERYTHING
-    if (now > userData.expiresAt) {
-      // console.log('🧹 Session expired, clearing all related data...')
-
-      // Get userId from user data
-      const userId = userData.userId
-
-      // Clear ALL chat-related data
-      localStorage.removeItem('chatUser')
-      localStorage.removeItem('adminMode')
-
-      if (userId) {
-        localStorage.removeItem(`messages_${userId}`)
-        localStorage.removeItem(`chatMessages_${userId}`)
-      }
-
-      // Clean up any orphaned data
-      Object.keys(localStorage).forEach((key) => {
-        if (key.startsWith('messages_') || key.startsWith('chatMessages_')) {
-          localStorage.removeItem(key)
+        // If removing adminMode, also clear the UI state
+        if (key === 'adminMode') {
+          showUserBotChat.value = true
         }
-      })
+      }
 
-      // console.log('✅ All expired data cleared')
-    } else {
-      // console.log('✅ Session is still valid')
+      // Also check for messages with old timestamp (24h old)
+      if (data.timestamp && now - data.timestamp > 24 * 60 * 60 * 1000) {
+        localStorage.removeItem(key)
+        console.log(`🧹 Removed old messages: ${key}`)
+      }
+    } catch (error) {
+      // If JSON parsing fails, remove corrupted data
+      console.log(`🧹 Removing corrupted data: ${key}`)
+      localStorage.removeItem(key)
     }
-  } catch (e) {
-    console.log('🧹 Corrupted user data, removing...')
-    localStorage.removeItem('chatUser')
-  }
+  })
 }
 
 // const clearAllExpiredSessions = () => {
@@ -554,28 +542,63 @@ const handleSessionExpired = () => {
 }
 
 onMounted(() => {
+  // 1. Clear expired sessions FIRST
   clearAllExpiredSessions()
 
-  // 1. Get user ID
+  // 2. Get user ID
   userId.value = getUserId(props.website)
-  // console.log('UserID:', userId.value)
-  showChat.value = !!localStorage.getItem('chatUser')
+  console.log('UserID:', userId.value)
 
-  // const storedUser = localStorage.getItem('chatUser')
+  // 3. Check if user is logged in (chatUser exists and is valid)
+  const storedUser = localStorage.getItem('chatUser')
+  showChat.value = false
 
-  // 4. Check admin mode
+  if (storedUser) {
+    try {
+      const userData = JSON.parse(storedUser)
+      if (Date.now() <= userData.expiresAt) {
+        showChat.value = true
+      } else {
+        // Remove expired chatUser
+        localStorage.removeItem('chatUser')
+      }
+    } catch {
+      localStorage.removeItem('chatUser')
+    }
+  }
+
+  // 4. Check admin mode - IMPORTANT FIX HERE
   const adminMode = localStorage.getItem('adminMode')
-  showUserBotChat.value = !adminMode
+  if (adminMode) {
+    try {
+      const adminData = JSON.parse(adminMode)
+      if (Date.now() <= adminData.expiresAt) {
+        showUserBotChat.value = false
+      } else {
+        // Admin session expired, remove and show bot chat
+        localStorage.removeItem('adminMode')
+        showUserBotChat.value = true
+      }
+    } catch {
+      localStorage.removeItem('adminMode')
+      showUserBotChat.value = true
+    }
+  } else {
+    showUserBotChat.value = true
+  }
 
   // 5. Load bot messages if any exist
   const storedMessages = localStorage.getItem(`messages_${userId.value}`)
-  // const oneDay = 24 * 60 * 60 * 1000
   if (storedMessages) {
     try {
       const data = JSON.parse(storedMessages)
-      messages.value = data.messages || getDefaultMessage()
+      messages.value = data.messages || [
+        { text: "Hey there, I'm Chatbot convo. How can I help you today?", sender: 'AI' },
+      ]
     } catch {
-      messages.value = getDefaultMessage()
+      messages.value = [
+        { text: "Hey there, I'm Chatbot convo. How can I help you today?", sender: 'AI' },
+      ]
     }
   }
 

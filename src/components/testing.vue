@@ -244,3 +244,183 @@ const handleForm = () => {
   cursor: not-allowed;
 }
 </style>
+
+<script setup>
+// Replace your clearAllExpiredSessions function with this:
+const clearAllExpiredSessions = () => {
+  const now = Date.now()
+
+  // Clean up ALL expired sessions at once
+  const keysToCheck = [
+    'chatUser',
+    'adminMode',
+    ...Object.keys(localStorage).filter(
+      (key) => key.startsWith('messages_') || key.startsWith('chatMessages_'),
+    ),
+  ]
+
+  keysToCheck.forEach((key) => {
+    try {
+      const item = localStorage.getItem(key)
+      if (!item) return
+
+      const data = JSON.parse(item)
+
+      // Check if item has expiresAt and it's expired
+      if (data.expiresAt && now > data.expiresAt) {
+        localStorage.removeItem(key)
+        console.log(`🧹 Removed expired: ${key}`)
+
+        // If removing adminMode, also clear the UI state
+        if (key === 'adminMode') {
+          showUserBotChat.value = true
+        }
+      }
+
+      // Also check for messages with old timestamp (24h old)
+      if (data.timestamp && now - data.timestamp > 24 * 60 * 60 * 1000) {
+        localStorage.removeItem(key)
+        console.log(`🧹 Removed old messages: ${key}`)
+      }
+    } catch (error) {
+      // If JSON parsing fails, remove corrupted data
+      console.log(`🧹 Removing corrupted data: ${key}`)
+      localStorage.removeItem(key)
+    }
+  })
+}
+
+// Update your onMounted to this:
+onMounted(() => {
+  // 1. Clear expired sessions FIRST
+  clearAllExpiredSessions()
+
+  // 2. Get user ID
+  userId.value = getUserId(props.website)
+  console.log('UserID:', userId.value)
+
+  // 3. Check if user is logged in (chatUser exists and is valid)
+  const storedUser = localStorage.getItem('chatUser')
+  showChat.value = false
+
+  if (storedUser) {
+    try {
+      const userData = JSON.parse(storedUser)
+      if (Date.now() <= userData.expiresAt) {
+        showChat.value = true
+      } else {
+        // Remove expired chatUser
+        localStorage.removeItem('chatUser')
+      }
+    } catch {
+      localStorage.removeItem('chatUser')
+    }
+  }
+
+  // 4. Check admin mode - IMPORTANT FIX HERE
+  const adminMode = localStorage.getItem('adminMode')
+  if (adminMode) {
+    try {
+      const adminData = JSON.parse(adminMode)
+      if (Date.now() <= adminData.expiresAt) {
+        showUserBotChat.value = false
+      } else {
+        // Admin session expired, remove and show bot chat
+        localStorage.removeItem('adminMode')
+        showUserBotChat.value = true
+      }
+    } catch {
+      localStorage.removeItem('adminMode')
+      showUserBotChat.value = true
+    }
+  } else {
+    showUserBotChat.value = true
+  }
+
+  // 5. Load bot messages if any exist
+  const storedMessages = localStorage.getItem(`messages_${userId.value}`)
+  if (storedMessages) {
+    try {
+      const data = JSON.parse(storedMessages)
+      messages.value = data.messages || [
+        { text: "Hey there, I'm Chatbot convo. How can I help you today?", sender: 'AI' },
+      ]
+    } catch {
+      messages.value = [
+        { text: "Hey there, I'm Chatbot convo. How can I help you today?", sender: 'AI' },
+      ]
+    }
+  }
+
+  // 6. Show bubble after delay
+  setTimeout(() => {
+    showBubble.value = true
+  }, 3000)
+
+  // 7. Fetch customization
+  getCustomization()
+})
+
+// Also update the AdminChatSection's onMounted to clear expired sessions properly:
+// In your AdminChatSection component, update the onMounted to this:
+onMounted(async () => {
+  // Check if session is expired BEFORE loading anything
+  const adminMode = localStorage.getItem('adminMode')
+  if (!adminMode) {
+    // No admin mode, go back to bot chat
+    emit('session-expired')
+    return
+  }
+
+  try {
+    const adminData = JSON.parse(adminMode)
+    if (Date.now() > adminData.expiresAt) {
+      localStorage.removeItem('adminMode')
+      emit('session-expired')
+      return
+    }
+  } catch {
+    localStorage.removeItem('adminMode')
+    emit('session-expired')
+    return
+  }
+
+  // Rest of your existing onMounted code...
+  const stored = localStorage.getItem(`chatMessages_${props.userId}`)
+  const oneDay = 1 * 24 * 60 * 60 * 1000
+
+  if (stored) {
+    const data = JSON.parse(stored)
+    if (!data.timestamp || Date.now() - data.timestamp > oneDay) {
+      localStorage.removeItem(`chatMessages_${props.userId}`)
+      localStorage.removeItem('adminMode')
+      emit('session-expired')
+      return
+    } else {
+      chatMessages.value = data.chatMessages
+      await nextTick()
+      scrollToBottom()
+      setTimeout(() => {
+        fetchInitialMessages()
+      }, 1000)
+    }
+  } else {
+    await fetchInitialMessages()
+    await nextTick()
+    scrollToBottom()
+  }
+
+  // Initialize Ably
+  const isAblyInitialized = await initializeAbly()
+  if (isAblyInitialized) {
+    unsubscribeFromAbly = onAdminReply(props.userId, handleAdminReply)
+
+    typingUnsubscribe = onAdminTyping(props.userId, (isTyping) => {
+      isAdminTyping.value = isTyping
+      if (isTyping) {
+        nextTick(() => scrollToBottom())
+      }
+    })
+  }
+})
+</script>
