@@ -37,14 +37,10 @@ const handleForm = () => {
   loading.value = true
 
   setTimeout(() => {
-    const token = Math.random().toString(36).substring(2) + Date.now().toString(36)
-    // console.log('Generated token:', token)
-
-    const expiresAt = Date.now() + 1 * 24 * 60 * 60 * 1000
-
-    localStorage.setItem('chatUser', JSON.stringify({ ...form, token, expiresAt }))
+    // Emit the form data back to parent
+    // Parent will handle session creation with userId
+    emit('form-complete', { ...form })
     loading.value = false
-    emit('form-complete')
   }, 3000)
 }
 </script>

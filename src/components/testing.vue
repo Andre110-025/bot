@@ -1,260 +1,246 @@
 <script setup>
-import { ref, readonly } from 'vue'
-import * as Ably from 'ably'
+import { ref, computed, reactive } from 'vue'
+import LoadingAnime from './LoadingAnime.vue'
 
-const ablyService = ref(null)
-const isConnected = ref(false)
+const props = defineProps({
+  primaryColor: {
+    type: String,
+  },
+})
 
-const ABLY_AUTH_URL = 'https://assitance.storehive.com.ng/public/api/ably/auth'
+const customStyles = computed(() => ({
+  '--primary-color': props.primaryColor,
+}))
 
-export function useAbly() {
-  const initializeAbly = async () => {
-    if (ablyService.value) {
-      // console.log('Ably already initialized')
-      return true
-    }
+const emit = defineEmits(['form-complete'])
 
-    try {
-      // console.log('🔄 Initializing Ably connection...')
+const loading = ref(false)
+const form = reactive({
+  name: '',
+  email: '',
+  phone: '',
+})
 
-      const res = await fetch(ABLY_AUTH_URL, {
-        method: 'POST',
-        credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json',
-          Accept: 'application/json',
-        },
-      })
+const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
-      if (!res.ok) {
-        const errorText = await res.text()
-        console.error('Auth endpoint error:', errorText)
-        throw new Error(`HTTP ${res.status}: ${errorText}`)
-      }
+const isEmailValid = computed(() => {
+  return emailRegex.test(form.email.trim())
+})
 
-      const json = await res.json()
-      console.log('Auth response:', json)
+const isFormValid = computed(() => {
+  return form.name.trim() !== '' && isEmailValid.value && form.phone.length >= 10
+})
 
-      if (!json.success) {
-        throw new Error(json.message || json.error || 'Auth failed')
-      }
+const handleForm = () => {
+  if (!isFormValid.value) return
 
-      const ably = new Ably.Realtime({
-        token: json.data.token,
-        echoMessages: false,
-        clientId: json.data.clientId || undefined,
-        autoConnect: true,
-      })
+  loading.value = true
 
-      ably.connection.on('connected', () => {
-        // console.log('✅ Ably CONNECTED (User)')
-        isConnected.value = true
-      })
+  setTimeout(() => {
+    const token = Math.random().toString(36).substring(2) + Date.now().toString(36)
+    // console.log('Generated token:', token)
 
-      ably.connection.on('connecting', () => {
-        // console.log('🔄 Ably connecting...')
-      })
+    const expiresAt = Date.now() + 1 * 24 * 60 * 60 * 1000
 
-      ably.connection.on('disconnected', () => {
-        // console.log('⚠️ Ably disconnected')
-        isConnected.value = false
-      })
-
-      ably.connection.on('failed', (error) => {
-        console.error('❌ Ably connection failed:', error)
-        isConnected.value = false
-      })
-
-      ablyService.value = ably
-      return true
-    } catch (err) {
-      console.error('❌ Ably initialization failed:', err)
-      return false
-    }
-  }
-
-  const onAdminReply = (sessionId, callback) => {
-    if (!ablyService.value) {
-      // console.error('❌ Cannot subscribe: Ably not initialized')
-      return () => {}
-    }
-
-    try {
-      const channel = ablyService.value.channels.get('chat-messages')
-
-      const handler = (msg) => {
-        // console.log('🔔 USER RAW ABLY MESSAGE:', {
-        //   channel: 'chat-messages',
-        //   eventName: msg.name,
-        //   data: msg.data,
-        //   timestamp: msg.timestamp,
-        // })
-
-        // FIXED: Check msg.name (not msg.data.event_type)
-        if (msg.name === 'new.message' && msg.data) {
-          // console.log('📩 Potential message detected:', msg.data)
-
-          // FIXED: Add session ID normalization and better debugging
-          const msgSession = String(msg.data.session_id).trim()
-          const mySession = String(sessionId).trim()
-
-          // console.log('🔍 Session ID Comparison:', {
-          //   msgSession,
-          //   mySession,
-          //   match: msgSession === mySession,
-          //   senderType: msg.data.sender_type,
-          //   shouldProcess: msgSession === mySession && msg.data.sender_type === 'admin',
-          // })
-
-          //  FIXED: Filter for this user's session and admin messages
-          if (msgSession === mySession && msg.data.sender_type === 'admin') {
-            // console.log(' ADMIN MESSAGE FOR ME! Processing...', msg.data)
-            callback(msg.data)
-          } else {
-            // console.log('⚠️ Message not for me:', {
-            //   mySession,
-            //   msgSession,
-            //   sender: msg.data.sender_type,
-            //   reason: msgSession !== mySession ? 'session_mismatch' : 'not_admin_message',
-            // })
-          }
-        }
-      }
-
-      // Add channel state monitoring
-      channel.on('attached', () => {
-        // console.log(` Channel 'chat-messages' attached for user session: ${sessionId}`)
-      })
-
-      channel.on('failed', (stateChange) => {
-        // console.error(`❌ Channel 'chat-messages' failed:`, stateChange)
-      })
-
-      channel.subscribe(handler)
-      // console.log(
-      //   ` Listening for admin replies on session: ${sessionId} (channel: chat-messages)`,
-      // )
-
-      return () => {
-        channel.unsubscribe(handler)
-        // console.log(`🔕 Stopped listening to session: ${sessionId}`)
-      }
-    } catch (err) {
-      console.error('❌ Subscribe error:', err)
-      return () => {}
-    }
-  }
-
-  const subscribe = (channelName, callback) => {
-    if (!ablyService.value) {
-      console.error('❌ Cannot subscribe: Ably not initialized')
-      return () => {}
-    }
-
-    try {
-      const channel = ablyService.value.channels.get(channelName)
-
-      channel.subscribe((msg) => {
-        // console.log(`📩 Message on [${channelName}]:`, msg.name, msg.data)
-        callback(msg)
-      })
-
-      // console.log(` Subscribed to channel: ${channelName}`)
-
-      return () => {
-        channel.unsubscribe()
-        // console.log(` Unsubscribed from channel: ${channelName}`)
-      }
-    } catch (err) {
-      console.error(`❌ Subscribe error on ${channelName}:`, err)
-      return () => {}
-    }
-  }
-
-  const disconnect = () => {
-    if (ablyService.value) {
-      ablyService.value.close()
-      ablyService.value = null
-      isConnected.value = false
-      // console.log('👋 Ably disconnected')
-    }
-  }
-
-  const sendTypingIndicator = (sessionId, isTyping) => {
-    if (!channel.value) return
-
-    channel.value.publish('typing-indicator', {
-      session_id: sessionId,
-      sender_type: 'user',
-      is_typing: isTyping,
-      timestamp: new Date().toISOString(),
-    })
-  }
-
-  const onAdminTyping = (sessionId, callback) => {
-    if (!channel.value) return () => {}
-
-    let typingTimeout = null
-
-    const listener = (message) => {
-      const data = message.data
-      if (data.sender_type === 'admin' && data.session_id === sessionId) {
-        callback(data.is_typing)
-
-        // Auto-clear after 3 seconds
-        if (typingTimeout) clearTimeout(typingTimeout)
-
-        if (data.is_typing) {
-          typingTimeout = setTimeout(() => {
-            callback(false)
-          }, 3000)
-        }
-      }
-    }
-
-    channel.value.subscribe('typing-indicator', listener)
-
-    return () => {
-      channel.value.unsubscribe('typing-indicator', listener)
-      if (typingTimeout) clearTimeout(typingTimeout)
-    }
-  }
-
-  return {
-    isConnected: readonly(isConnected),
-    initializeAbly,
-    onAdminReply,
-    subscribe,
-    sendTypingIndicator,
-    onAdminTyping,
-    disconnect,
-  }
-}
-
-const getCustomization = async () => {
-  if (!props.api || !props.website) return
-
-  try {
-    const response = await axios.get('https://assitance.storehive.com.ng/public/api/getsettings', {
-      params: {
-        website: props.website,
-        api: props.api,
-      },
-    })
-    console.log('API Response:', response.data)
-
-    // Check if Settings exists and has items, then take the first one
-    if (response.data?.Settings?.length > 0) {
-      customization.value = response.data.Settings[0] // <-- THIS IS THE FIX
-      console.log('Customization data:', customization.value)
-      applyCustomizationStyles()
-    } else {
-      console.warn('No settings found in response')
-      applyDefaultStyles()
-    }
-  } catch (err) {
-    console.error('Error fetching customization:', err)
-    applyDefaultStyles()
-  }
+    localStorage.setItem('chatUser', JSON.stringify({ ...form, token, expiresAt }))
+    loading.value = false
+    emit('form-complete')
+  }, 3000)
 }
 </script>
+
+<template>
+  <div class="cdUser011011-container">
+    <div class="cdUser011011-card">
+      <h2 class="cdUser011011-title">
+        <svg
+          class="cdUser011011-title-svg"
+          xmlns="http://www.w3.org/2000/svg"
+          width="32"
+          height="32"
+          viewBox="0 0 24 24"
+        >
+          <defs>
+            <linearGradient id="cdUser011011Gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="var(--primary-color)" />
+              <stop offset="100%" stop-color="var(--primary-color)" />
+            </linearGradient>
+          </defs>
+
+          <path
+            fill="url(#cdUser011011Gradient)"
+            d="M22.62 3.783c-1.115-1.811-4.355-2.604-6.713-.265c-.132.135-.306.548.218 1.104c1.097 1.149 6.819 7.046 4.702 12.196c-1.028 2.504-3.953 2.073-5.052-2.076a23.2 23.2 0 0 1-.473-9.367s.105-.394-.065-.52c-.117-.087-.305-.05-.547.33c-.06.096-.048.076-.106.178l-.003.002c-1.622 2.688-3.272 5.874-4.049 7.07c.38-1.803-.101-4.283-.85-6.359l-.142-.375c-.692-1.776-1.524-2.974-1.776-3.245c-.03-.033-.105-.094-.353-.094H.398c-.49 0-.448.412-.293.561c1.862 2.178 7.289 10.343 4.773 18.355c-.194.619.11.944.612.305c2.206-2.81 4.942-7.598 6.925-11.187c-.437 1.245-.822 2.63-1.028 4.083c-.435 3.064.487 5.37 1.162 6.58c.345.619.803.998 1.988.824c6.045-.885 8.06-6.117 8.805-8.77c1.357-4.839.363-7.568-.722-9.33"
+          />
+        </svg>
+
+        <span>elcome</span>
+      </h2>
+      <p class="cdUser011011-subtitle">Please provide your info to start chatting with us</p>
+
+      <form @submit.prevent="handleForm" class="cdUser011011-form">
+        <div class="cdUser011011-input-group">
+          <label>Full Name</label>
+          <input v-model="form.name" type="text" :style="customStyles" />
+        </div>
+
+        <div class="cdUser011011-input-group">
+          <label>Email Address</label>
+          <input v-model="form.email" type="email" :style="customStyles" />
+        </div>
+
+        <div class="cdUser011011-input-group">
+          <label>Phone Number</label>
+          <input v-model="form.phone" type="tel" :style="customStyles" />
+        </div>
+
+        <button type="submit" :disabled="!isFormValid || loading" class="cdUser011011-btn">
+          <LoadingAnime v-if="loading" />
+          <span v-if="!loading">Start Chat</span>
+        </button>
+      </form>
+    </div>
+  </div>
+</template>
+
+<style scoped>
+/* Reset box-sizing for this component */
+.cdUser011011-container *,
+.cdUser011011-container *::before,
+.cdUser011011-container *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+.cdUser011011-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  padding: 16px;
+  width: 100%;
+}
+
+.cdUser011011-card {
+  width: 100%;
+  max-width: 420px;
+  background: #fff;
+  border-radius: 16px;
+  padding: 28px 24px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+}
+
+.cdUser011011-title {
+  text-align: center;
+  font-size: 1.5rem;
+  color: #111827;
+  font-weight: 600;
+  margin: 0 0 8px 0;
+  padding: 0;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  line-height: 1.2;
+}
+
+.cdUser011011-title span {
+  margin: 0;
+  padding: 0;
+}
+
+.cdUser011011-title-svg {
+  display: block;
+  flex-shrink: 0;
+}
+
+.cdUser011011-subtitle {
+  text-align: center;
+  color: #6b7280;
+  font-size: 0.9rem;
+  margin: 0 0 24px 0;
+  padding: 0;
+  line-height: 1.4;
+}
+
+.cdUser011011-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin: 0;
+  padding: 0;
+}
+
+.cdUser011011-input-group {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+}
+
+.cdUser011011-input-group label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #374151;
+  margin: 0 0 6px 0;
+  padding: 0;
+  line-height: 1.2;
+}
+
+.cdUser011011-input-group input {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--primary-color);
+  border-radius: 8px;
+  outline: none;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+  font-size: 0.95rem;
+  line-height: 1.4;
+  margin: 0;
+  background: #fff;
+}
+
+.cdUser011011-input-group input:focus {
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+}
+.cdUser011011-Gradient {
+  color: var(--primary-color);
+}
+.cdUser011011-btn {
+  background: var(--primary-color);
+  color: white;
+  font-weight: 600;
+  font-size: 0.95rem;
+  border: none;
+  padding: 12px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition:
+    opacity 0.2s ease,
+    transform 0.1s ease;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  margin: 4px 0 0 0;
+  min-height: 44px;
+}
+
+.cdUser011011-btn:hover:not(:disabled) {
+  opacity: 0.9;
+  transform: translateY(-1px);
+}
+
+.cdUser011011-btn:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.cdUser011011-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+</style>
