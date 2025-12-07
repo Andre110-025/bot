@@ -1,9 +1,9 @@
 <script setup>
 import { ref, nextTick, onMounted, onBeforeUnmount, computed } from 'vue'
 import axios from 'axios'
+// import { getUserId } from './utils/userId'
 import { useAbly } from '../composables/userAbly'
 import { useChatNotifications } from '../composables/useChatNotifications'
-import { SessionManager } from './utils/sessionManager'
 
 const props = defineProps({
   userId: { type: String, required: true },
@@ -13,12 +13,12 @@ const props = defineProps({
   secondaryColor: { type: String, required: true },
 })
 
-const emit = defineEmits(['session-expired'])
-
 const customStyles = computed(() => ({
   '--primary-color': props.primaryColor,
   '--secondary-color': props.secondaryColor,
 }))
+
+console.log('userId prop:', props.userId)
 
 const { setUnreadMessage } = useChatNotifications()
 
@@ -27,11 +27,15 @@ const loading = ref(false)
 const chatMessages = ref([])
 const newMessage = ref('')
 const isAdminTyping = ref(false)
-
-// Define at top level
-let sessionCheckInterval = null
 let typingUnsubscribe = null
 let inputTypingTimeout = null
+
+// const cleanWebsite = props.website
+//   .replace(/^https?:\/\//, '')
+//   .replace(/^www\./, '')
+//   .split('/')[0]
+
+// const props.userId = getUserId(cleanWebsite)
 
 // Initialize Ably Composables
 const {
@@ -43,7 +47,7 @@ const {
   disconnect: disconnectAbly,
 } = useAbly()
 
-let unsubscribeFromAbly = () => {}
+let unsubscribeFromAbly = () => {} // To hold the unsubscribe function
 
 const statusText = computed(() => {
   if (!isConnected.value) return 'Connecting...'
@@ -68,21 +72,13 @@ const fetchInitialMessages = async () => {
       params: { website: props.website },
     })
 
-    const fetchedMessages = (response.data.data?.messages || []).map((msg) => {
+    chatMessages.value = (response.data.data?.messages || []).map((msg) => {
       const senderType = msg.sender_type === 'user' ? 'user' : 'admin'
       return {
         ...msg,
         sender: senderType,
       }
     })
-
-    // Only update if we got messages OR if we have no cached messages
-    if (fetchedMessages.length > 0 || chatMessages.value.length === 0) {
-      chatMessages.value = fetchedMessages
-      console.log(`📥 Fetched ${fetchedMessages.length} messages from server`)
-    } else {
-      console.log('📦 Keeping cached messages, server returned empty')
-    }
 
     saveMessages()
     await nextTick()
@@ -93,6 +89,10 @@ const fetchInitialMessages = async () => {
     loading.value = false
   }
 }
+
+onMounted(() => {
+  fetchInitialMessages()
+})
 
 const sendMessage = async () => {
   if (!newMessage.value.trim() || sending.value) return
@@ -188,69 +188,32 @@ const handleInputChange = () => {
   }, 1000)
 }
 
-const checkSessionValidity = () => {
-  console.log('🔍 checkSessionValidity called')
-
-  // Check if main session is still valid
-  if (!SessionManager.isSessionValid()) {
-    console.log('⏰ Main session expired in admin chat')
-    emit('session-expired')
-    return false
-  }
-
-  // Check if admin mode is still valid
-  if (!SessionManager.isAdminModeActive()) {
-    console.log('⏰ Admin mode expired in periodic check')
-    emit('session-expired')
-    return false
-  }
-
-  console.log('✅ Session is still valid')
-  return true
-}
-
 onMounted(async () => {
-  console.log('🚀 Admin chat mounted for userId:', props.userId)
-
-  // First check if session is still valid
-  if (!checkSessionValidity()) {
-    console.log('❌ Session invalid on mount')
-    return
-  }
-
   const stored = localStorage.getItem(`chatMessages_${props.userId}`)
-  const SESSION_DURATION = 24 * 60 * 60 * 1000
+  const oneDay = 1 * 24 * 60 * 60 * 1000
 
   if (stored) {
-    try {
-      const data = JSON.parse(stored)
+    const data = JSON.parse(stored)
+    if (!data.timestamp || Date.now() - data.timestamp > oneDay) {
+      localStorage.removeItem(`chatMessages_${props.userId}`)
+      localStorage.removeItem('adminMode')
 
-      if (!data.timestamp || Date.now() - data.timestamp > SESSION_DURATION) {
-        // Session expired
-        console.log('⏰ Admin messages expired')
-        localStorage.removeItem(`chatMessages_${props.userId}`)
-        emit('session-expired')
-        return
-      } else {
-        // Load existing messages
-        chatMessages.value = data.chatMessages || []
-        console.log(`📥 Loaded ${chatMessages.value.length} cached messages`)
-        await nextTick()
-        scrollToBottom()
-
-        // Still fetch fresh messages after a delay
-        setTimeout(() => {
-          fetchInitialMessages()
-        }, 1000)
-      }
-    } catch (e) {
-      console.error('Error loading admin messages:', e)
+      // window.location.reload()
       await fetchInitialMessages()
+      emit('session-expired')
+      return
+    } else {
+      chatMessages.value = data.chatMessages
+      await nextTick()
+      scrollToBottom()
+      setTimeout(() => {
+        fetchInitialMessages()
+      }, 1000)
     }
   } else {
-    // No cached messages, fetch from server
-    console.log('📡 Fetching messages from server...')
     await fetchInitialMessages()
+    await nextTick()
+    scrollToBottom()
   }
 
   // Initialize Ably
@@ -265,18 +228,6 @@ onMounted(async () => {
       }
     })
   }
-
-  // Check session validity every minute
-  const sessionCheckInterval = setInterval(() => {
-    if (!checkSessionValidity()) {
-      clearInterval(sessionCheckInterval)
-    }
-  }, 60000) // Check every minute
-
-  // Clean up interval on unmount
-  onBeforeUnmount(() => {
-    clearInterval(sessionCheckInterval)
-  })
 })
 
 onBeforeUnmount(() => {
@@ -284,7 +235,6 @@ onBeforeUnmount(() => {
   disconnectAbly()
   if (typingUnsubscribe) typingUnsubscribe()
   if (inputTypingTimeout) clearTimeout(inputTypingTimeout)
-  if (sessionCheckInterval) clearInterval(sessionCheckInterval)
 })
 </script>
 
@@ -333,15 +283,15 @@ onBeforeUnmount(() => {
               <span class="cdUser011011-time">{{ formatTime(msg.timestamp) }}</span>
             </div>
           </div>
-        </template>
 
-        <div v-if="isAdminTyping" class="cdUser011011-message-row admin">
-          <div class="cdUser011011-typing-indicator">
-            <span></span>
-            <span></span>
-            <span></span>
+          <div v-if="isAdminTyping" class="cdUser011011-message-row admin">
+            <div class="cdUser011011-typing-indicator">
+              <span></span>
+              <span></span>
+              <span></span>
+            </div>
           </div>
-        </div>
+        </template>
 
         <div v-if="loading" class="cdUser011011-loading-state">
           <div class="cdUser011011-spinner" :style="customStyles"></div>
