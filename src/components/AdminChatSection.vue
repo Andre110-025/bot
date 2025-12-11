@@ -1,7 +1,6 @@
 <script setup>
 import { ref, nextTick, onMounted, onBeforeUnmount, computed } from 'vue'
 import axios from 'axios'
-// import { getUserId } from './utils/userId'
 import { useAbly } from '../composables/userAbly'
 import { useChatNotifications } from '../composables/useChatNotifications'
 
@@ -12,6 +11,8 @@ const props = defineProps({
   primaryColor: { type: String, required: true },
   secondaryColor: { type: String, required: true },
 })
+
+const emit = defineEmits(['session-expired'])
 
 const customStyles = computed(() => ({
   '--primary-color': props.primaryColor,
@@ -30,14 +31,6 @@ const isAdminTyping = ref(false)
 let typingUnsubscribe = null
 let inputTypingTimeout = null
 
-// const cleanWebsite = props.website
-//   .replace(/^https?:\/\//, '')
-//   .replace(/^www\./, '')
-//   .split('/')[0]
-
-// const props.userId = getUserId(cleanWebsite)
-
-// Initialize Ably Composables
 const {
   initializeAbly,
   onAdminReply,
@@ -47,7 +40,7 @@ const {
   disconnect: disconnectAbly,
 } = useAbly()
 
-let unsubscribeFromAbly = () => {} // To hold the unsubscribe function
+let unsubscribeFromAbly = () => {}
 
 const statusText = computed(() => {
   if (!isConnected.value) return 'Connecting...'
@@ -61,6 +54,12 @@ const saveMessages = () => {
     chatMessages: chatMessages.value,
   }
   localStorage.setItem(`chatMessages_${props.userId}`, JSON.stringify(payload))
+}
+
+const clearSession = () => {
+  localStorage.removeItem(`chatMessages_${props.userId}`)
+  localStorage.removeItem('adminMode')
+  chatMessages.value = []
 }
 
 const fetchInitialMessages = async () => {
@@ -89,10 +88,6 @@ const fetchInitialMessages = async () => {
     loading.value = false
   }
 }
-
-onMounted(() => {
-  fetchInitialMessages()
-})
 
 const sendMessage = async () => {
   if (!newMessage.value.trim() || sending.value) return
@@ -192,29 +187,28 @@ onMounted(async () => {
   const stored = localStorage.getItem(`chatMessages_${props.userId}`)
   const oneDay = 1 * 24 * 60 * 60 * 1000
 
+  // Check for expired session
   if (stored) {
     const data = JSON.parse(stored)
     if (!data.timestamp || Date.now() - data.timestamp > oneDay) {
-      localStorage.removeItem(`chatMessages_${props.userId}`)
-      localStorage.removeItem('adminMode')
-
-      // window.location.reload()
-      await fetchInitialMessages()
+      // Session expired - clear everything and fetch fresh
+      console.log('Session expired, clearing and fetching fresh data')
+      clearSession()
       emit('session-expired')
+      await fetchInitialMessages()
       return
     } else {
+      // Valid cached data - use it temporarily
       chatMessages.value = data.chatMessages
       await nextTick()
       scrollToBottom()
-      setTimeout(() => {
-        fetchInitialMessages()
-      }, 1000)
     }
-  } else {
-    await fetchInitialMessages()
-    await nextTick()
-    scrollToBottom()
   }
+
+  // Always fetch fresh messages (whether we had cache or not)
+  await fetchInitialMessages()
+  await nextTick()
+  scrollToBottom()
 
   // Initialize Ably
   const isAblyInitialized = await initializeAbly()
@@ -254,51 +248,12 @@ onBeforeUnmount(() => {
 
     <div class="cdUser011011-messages-wrapper">
       <div ref="chatContainerRef" class="cdUser011011-messages-container">
-        <template v-for="(msg, i) in chatMessages" :key="msg.id || i">
-          <div
-            v-if="
-              i === 0 ||
-              new Date(msg.timestamp).toDateString() !==
-                new Date(chatMessages[i - 1].timestamp).toDateString()
-            "
-            class="cdUser011011-date-divider"
-          >
-            {{
-              new Date(msg.timestamp).toDateString() === new Date().toDateString()
-                ? 'Today'
-                : new Date(msg.timestamp).toLocaleDateString([], {
-                    month: 'short',
-                    day: 'numeric',
-                  })
-            }}
-          </div>
-
-          <div class="cdUser011011-message-row" :class="getMessageAlignment(msg)">
-            <div
-              class="cdUser011011-message-bubble"
-              :class="getMessageAlignment(msg)"
-              :style="customStyles"
-            >
-              <p>{{ msg.message }}</p>
-              <span class="cdUser011011-time">{{ formatTime(msg.timestamp) }}</span>
-            </div>
-          </div>
-
-          <div v-if="isAdminTyping" class="cdUser011011-message-row admin">
-            <div class="cdUser011011-typing-indicator">
-              <span></span>
-              <span></span>
-              <span></span>
-            </div>
-          </div>
-        </template>
-
         <div v-if="loading" class="cdUser011011-loading-state">
           <div class="cdUser011011-spinner" :style="customStyles"></div>
           <p>Loading messages...</p>
         </div>
 
-        <div v-if="chatMessages.length === 0 && !loading" class="cdUser011011-empty-state">
+        <div v-else-if="chatMessages.length === 0" class="cdUser011011-empty-state">
           <svg
             xmlns="http://www.w3.org/2000/svg"
             width="48"
@@ -313,6 +268,47 @@ onBeforeUnmount(() => {
           <p>No messages yet</p>
           <span>Start the conversation</span>
         </div>
+
+        <template v-else>
+          <template v-for="(msg, i) in chatMessages" :key="msg.id || i">
+            <div
+              v-if="
+                i === 0 ||
+                new Date(msg.timestamp).toDateString() !==
+                  new Date(chatMessages[i - 1].timestamp).toDateString()
+              "
+              class="cdUser011011-date-divider"
+            >
+              {{
+                new Date(msg.timestamp).toDateString() === new Date().toDateString()
+                  ? 'Today'
+                  : new Date(msg.timestamp).toLocaleDateString([], {
+                      month: 'short',
+                      day: 'numeric',
+                    })
+              }}
+            </div>
+
+            <div class="cdUser011011-message-row" :class="getMessageAlignment(msg)">
+              <div
+                class="cdUser011011-message-bubble"
+                :class="getMessageAlignment(msg)"
+                :style="customStyles"
+              >
+                <p>{{ msg.message }}</p>
+                <span class="cdUser011011-time">{{ formatTime(msg.timestamp) }}</span>
+              </div>
+            </div>
+          </template>
+
+          <div v-if="isAdminTyping" class="cdUser011011-message-row admin">
+            <div class="cdUser011011-typing-indicator">
+              <span></span>
+              <span></span>
+              <span></span>
+            </div>
+          </div>
+        </template>
       </div>
     </div>
 
@@ -410,7 +406,6 @@ onBeforeUnmount(() => {
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
-/* Clean Simple Header */
 .cdUser011011-chat-header {
   display: flex;
   align-items: center;
@@ -452,7 +447,6 @@ onBeforeUnmount(() => {
   font-weight: 500;
 }
 
-/* Messages Area */
 .cdUser011011-messages-wrapper {
   flex: 1;
   overflow: hidden;
@@ -486,7 +480,6 @@ onBeforeUnmount(() => {
   background: #d1d5db;
 }
 
-/* Date Divider */
 .cdUser011011-date-divider {
   text-align: center;
   font-size: 11px;
@@ -497,7 +490,6 @@ onBeforeUnmount(() => {
   margin: 12px 0;
 }
 
-/* Message Row */
 .cdUser011011-message-row {
   display: flex;
   animation: slideUp 0.2s ease-out;
@@ -522,7 +514,6 @@ onBeforeUnmount(() => {
   justify-content: flex-end;
 }
 
-/* Message Bubble */
 .cdUser011011-message-bubble {
   max-width: 70%;
   padding: 10px 14px;
@@ -550,14 +541,13 @@ onBeforeUnmount(() => {
   white-space: pre-wrap;
 }
 
-.cdUser011011-message-bubble .time {
+.cdUser011011-time {
   font-size: 10px;
   opacity: 0.6;
   display: block;
   margin-top: 2px;
 }
 
-/* Loading State */
 .cdUser011011-loading-state {
   display: flex;
   flex-direction: column;
@@ -587,7 +577,6 @@ onBeforeUnmount(() => {
   font-size: 13px;
 }
 
-/* Empty State */
 .cdUser011011-empty-state {
   display: flex;
   flex-direction: column;
@@ -616,7 +605,6 @@ onBeforeUnmount(() => {
   color: #9ca3af;
 }
 
-/* Input Area */
 .cdUser011011-input-wrapper {
   display: flex;
   gap: 10px;
@@ -637,7 +625,7 @@ onBeforeUnmount(() => {
   background: #fafafa;
 }
 
-.cdUser0110110-message-input:focus {
+.cdUser011011-message-input:focus {
   border-color: var(--primary-color);
   background: #ffffff;
   box-shadow: 0 0 0 3px rgba(0, 153, 112, 0.08);
@@ -682,7 +670,7 @@ onBeforeUnmount(() => {
   transform: none;
 }
 
-.cdUser011011-btn-loader {
+.btn-loader {
   width: 16px;
   height: 16px;
   border: 2px solid rgba(255, 255, 255, 0.3);
@@ -691,7 +679,6 @@ onBeforeUnmount(() => {
   animation: spin 0.8s linear infinite;
 }
 
-/* Responsive Design */
 @media (max-width: 640px) {
   .cdUser011011-chat-header {
     padding: 14px 16px;
@@ -710,7 +697,7 @@ onBeforeUnmount(() => {
   }
 
   .cdUser011011-message-input {
-    font-size: 16px; /* Prevent zoom on iOS */
+    font-size: 16px;
   }
 }
 </style>
