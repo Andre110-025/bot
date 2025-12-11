@@ -1633,3 +1633,1021 @@ h3 {
   text-decoration: none;
 }
 </style>
+
+<template>
+  <div class="cdUser011011-wrapper position-bottom-right" v-if="showBubble">
+    <!-- Floating Bubble -->
+    <div class="cdUser011011-chatbot">
+      <div class="cdUser011011-inner">
+        <div class="cdUser011011-bubble" @click="togglePopup">
+          <svg xmlns="http://www.w3.org/2000/svg" class="cdUser011011-icon" viewBox="0 0 24 24">
+            <path
+              fill="currentColor"
+              d="M2 22V9q0-.825.588-1.413Q3.175 7 4 7h2V4q0-.825.588-1.413Q7.175 2 8 2h12q.825 0 1.413.587Q22 3.175 22 4v8q0 .825-.587 1.412Q20.825 14 20 14h-2v3q0 .825-.587 1.413Q16.825 19 16 19H5Zm6-10h8V9H8Zm-4 5h12v-3H8q-.825 0-1.412-.588Q6 12.825 6 12V9H4Zm14-5h2V4H8v3h8q.825 0 1.413.587Q18 8.175 18 9Z"
+            />
+          </svg>
+          <span v-if="hasUnreadMessages" class="cdUser011011-ping"></span>
+          <span v-if="hasUnreadMessages" class="cdUser011011-ping-static"></span>
+        </div>
+
+        <!-- Chat Popup -->
+        <transition name="cdUser011011-fade">
+          <div v-if="showPopup" class="cdUser011011-popup-container">
+            <div class="cdUser011011-popup">
+              <!-- Header -->
+              <header class="cdUser011011-header">
+                <div class="cdUser011011-header-left">
+                  <div v-if="showAvatar" class="cdUser011011-avatar">
+                    <img :src="avatarUrl" class="cdUser011011-avatar-img" />
+                  </div>
+                  <div v-else class="cdUser011011-avatar">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="20"
+                      height="20"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        fill="currentColor"
+                        d="M1 18q.225-2.675 1.638-4.925T6.4 9.5L4.55 6.3q-.15-.225-.075-.475T4.8 5.45q.2-.125.45-.05t.4.3L7.5 8.9Q9.65 8 12 8t4.5.9l1.85-3.2q.15-.225.4-.3t.45.05q.25.125.325.375t-.075.475L17.6 9.5q2.35 1.325 3.762 3.575T23 18zm6-2.75q.525 0 .888-.363T8.25 14t-.363-.888T7 12.75t-.888.363T5.75 14t.363.888t.887.362m10 0q.525 0 .888-.363T18.25 14t-.363-.888T17 12.75t-.888.363t-.362.887t.363.888t.887.362"
+                      />
+                    </svg>
+                  </div>
+                  <div class="cdUser011011-header-info">
+                    <h2 class="cdUser011011-title">Help Desk</h2>
+                    <p class="cdUser011011-subtitle">Your support assistant, ready to help</p>
+                  </div>
+                </div>
+                <button class="cdUser011011-close" @click="togglePopup">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="20"
+                    height="20"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      fill="currentColor"
+                      d="M6.4 19L5 17.6l5.6-5.6L5 6.4L6.4 5l5.6 5.6L17.6 5L19 6.4L13.4 12l5.6 5.6l-1.4 1.4l-5.6-5.6z"
+                    />
+                  </svg>
+                </button>
+              </header>
+
+              <!-- Sign In Form -->
+              <SignInForm
+                v-if="!showChat"
+                @form-complete="handleFormComplete"
+                :primary-color="customization.value?.primarycolor"
+              />
+
+              <!-- Chat Area -->
+              <section v-else ref="chatContainer" class="cdUser011011-body">
+                <div v-if="showUserBotChat" class="cdUser011011-messages-container">
+                  <div
+                    v-for="(msg, index) in messages"
+                    :key="index"
+                    class="cdUser011011-message-row"
+                    :class="
+                      msg.sender === 'AI'
+                        ? 'cdUser011011-message-left'
+                        : 'cdUser011011-message-right'
+                    "
+                  >
+                    <!-- AI Message -->
+                    <template v-if="msg.sender === 'AI'">
+                      <div v-if="showAvatar" class="cdUser011011-avatar-bot">
+                        <img :src="avatarUrl" class="cdUser011011-avatar-img" />
+                      </div>
+                      <div v-else class="cdUser011011-avatar-bot">
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          width="20"
+                          height="20"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            fill="currentColor"
+                            d="M1 18q.225-2.675 1.638-4.925T6.4 9.5L4.55 6.3q-.15-.225-.075-.475T4.8 5.45q.2-.125.45-.05t.4.3L7.5 8.9Q9.65 8 12 8t4.5.9l1.85-3.2q.15-.225.4-.3t.45.05q.25.125.325.375t-.075.475L17.6 9.5q2.35 1.325 3.762 3.575T23 18zm6-2.75q.525 0 .888-.363T8.25 14t-.363-.888T7 12.75t-.888.363T5.75 14t.363.888t.887.362m10 0q.525 0 .888-.363T18.25 14t-.363-.888T17 12.75t-.888.363t-.362.887t.363.888t.887.362"
+                          />
+                        </svg>
+                      </div>
+
+                      <div v-if="!msg.isButton" class="cdUser011011-message bot">
+                        <span v-if="msg.isThinking" class="cdUser011011-typing-indicator">
+                          <span class="cdUser011011-typing-dot"></span>
+                          <span class="cdUser011011-typing-dot"></span>
+                          <span class="cdUser011011-typing-dot"></span>
+                        </span>
+                        <span
+                          v-else-if="typingMessageIndex === index"
+                          class="cdUser011011-chat-message"
+                          v-html="formatMessage(displayedTexts[index] || '')"
+                        >
+                        </span>
+                        <span
+                          v-else
+                          class="cdUser011011-chat-message"
+                          v-html="formatMessage(msg.text)"
+                        >
+                        </span>
+                      </div>
+
+                      <div v-else class="cdUser011011-message bot">
+                        <button
+                          class="cdUser011011-fallback-btn"
+                          @click="sendToAdmin(msg.triggeringMessage)"
+                        >
+                          Chat with a representative
+                        </button>
+                      </div>
+                    </template>
+
+                    <!-- User Message -->
+                    <template v-else>
+                      <div class="cdUser011011-message user">{{ msg.text }}</div>
+                      <div class="cdUser011011-avatar-user">
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          width="20"
+                          height="20"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            fill="currentColor"
+                            d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10s10-4.48 10-10S17.52 2 12 2m0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3s-3-1.34-3-3s1.34-3 3-3m0 14.2a7.2 7.2 0 0 1-6-3.22c.03-1.99 4-3.08 6-3.08c1.99 0 5.97 1.09 6 3.08a7.2 7.2 0 0 1-6 3.22"
+                          />
+                        </svg>
+                      </div>
+                    </template>
+                  </div>
+                </div>
+
+                <AdminChatSection
+                  v-else
+                  :userId="userId"
+                  :api="props.api"
+                  :website="props.website"
+                  :primary-color="customization.value?.primarycolor"
+                  :secondary-color="customization.value?.secondarycolor"
+                  @session-expired="handleSessionExpired"
+                />
+              </section>
+
+              <!-- Input Footer -->
+              <footer class="cdUser011011-footer" v-if="showUserBotChat">
+                <div class="cdUser011011-footer-main">
+                  <div class="cdUser011011-input-wrapper">
+                    <input
+                      v-model="userInput"
+                      @keyup.enter="sendMessage"
+                      type="text"
+                      placeholder="Type your message..."
+                      class="cdUser011011-footer-input"
+                    />
+                    <button
+                      class="cdUser011011-footer-send"
+                      @click="sendMessage"
+                      :disabled="!userInput.trim()"
+                    >
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="18"
+                        height="18"
+                        viewBox="0 0 24 24"
+                      >
+                        <path fill="currentColor" d="M3 20v-6l8-2l-8-2V4l19 8z" />
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+              </footer>
+            </div>
+
+            <!-- Watermark -->
+            <div class="cdUser011011-watermark">
+              <a
+                href="https://chatbotconvo.com"
+                target="_blank"
+                class="cdUser011011-watermark-link"
+                @click.stop
+              >
+                <svg
+                  width="10"
+                  height="10"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    d="M12 2L2 7L12 12L22 7L12 2Z"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                  <path
+                    d="M2 17L12 22L22 17"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                  <path
+                    d="M2 12L12 17L22 12"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                </svg>
+                <span>Powered by</span>
+                <strong>botconvo.com</strong>
+              </a>
+            </div>
+          </div>
+        </transition>
+      </div>
+    </div>
+  </div>
+</template>
+
+<style>
+:root {
+  --primary-color: #10b981;
+  --secondary-color: #059669;
+  --bubble-size: 56px;
+  --popup-width: 100%;
+  --popup-height: 100%;
+  --border-radius: 16px;
+}
+
+/* ===== BASE STYLES ===== */
+.cdUser011011-wrapper {
+  z-index: 9999;
+  font-family:
+    -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+.cdUser011011-wrapper *,
+.cdUser011011-wrapper *::before,
+.cdUser011011-wrapper *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* ===== POSITIONING ===== */
+.cdUser011011-wrapper.position-bottom-right {
+  position: fixed;
+  bottom: 1rem;
+  right: 1rem;
+}
+
+.cdUser011011-wrapper.position-bottom-left {
+  position: fixed;
+  bottom: 1rem;
+  left: 1rem;
+}
+
+.cdUser011011-wrapper.position-top-right {
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
+}
+
+.cdUser011011-wrapper.position-top-left {
+  position: fixed;
+  top: 1rem;
+  left: 1rem;
+}
+
+/* ===== FLOATING BUBBLE ===== */
+.cdUser011011-bubble {
+  width: var(--bubble-size);
+  height: var(--bubble-size);
+  background: var(--primary-color);
+  border-radius: 50%;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow:
+    0 4px 12px rgba(16, 185, 129, 0.3),
+    0 8px 24px rgba(16, 185, 129, 0.2);
+  position: relative;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  animation: cdUser011011-bounceIn 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  touch-action: manipulation;
+}
+
+.cdUser011011-bubble:hover,
+.cdUser011011-bubble:active {
+  transform: scale(1.08) translateY(-2px);
+  box-shadow:
+    0 6px 16px rgba(16, 185, 129, 0.4),
+    0 12px 32px rgba(16, 185, 129, 0.25);
+}
+
+.cdUser011011-bubble:active {
+  transform: scale(0.95);
+}
+
+.cdUser011011-icon {
+  width: 24px;
+  height: 24px;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1));
+}
+
+/* Ping Animation */
+.cdUser011011-ping,
+.cdUser011011-ping-static {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 10px;
+  height: 10px;
+  background: #34d399;
+  border-radius: 50%;
+  border: 2px solid #fff;
+}
+
+.cdUser011011-ping {
+  animation: cdUser011011-pingAnim 2s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+
+.cdUser011011-ping-static {
+  box-shadow: 0 0 4px var(--secondary-color);
+}
+
+@keyframes cdUser011011-pingAnim {
+  0% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  75%,
+  100% {
+    transform: scale(2.5);
+    opacity: 0;
+  }
+}
+
+@keyframes cdUser011011-bounceIn {
+  0% {
+    transform: scale(0);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.1);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* ===== CHAT POPUP ===== */
+.cdUser011011-popup-container {
+  position: absolute;
+  bottom: calc(var(--bubble-size) + 10px);
+  right: 0;
+  width: 100vw;
+  height: calc(100vh - 100px);
+  max-width: 500px;
+  max-height: 700px;
+  display: flex;
+  flex-direction: column;
+}
+
+@media (max-width: 640px) {
+  .cdUser011011-popup-container {
+    width: calc(100vw - 2rem);
+    max-width: none;
+    right: -0.5rem;
+    bottom: calc(var(--bubble-size) + 0.5rem);
+  }
+
+  .cdUser011011-wrapper.position-bottom-left .cdUser011011-popup-container {
+    right: auto;
+    left: -0.5rem;
+  }
+}
+
+.cdUser011011-popup {
+  width: 100%;
+  height: 100%;
+  background: #ffffff;
+  border-radius: var(--border-radius);
+  box-shadow:
+    0 10px 25px rgba(0, 0, 0, 0.2),
+    0 40px 80px rgba(0, 0, 0, 0.15);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  backdrop-filter: blur(10px);
+}
+
+/* ===== HEADER ===== */
+.cdUser011011-header {
+  background: var(--primary-color);
+  color: #fff;
+  padding: 0.75rem 1rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  flex-shrink: 0;
+  min-height: 60px;
+}
+
+.cdUser011011-header-left {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex: 1;
+  min-width: 0;
+}
+
+.cdUser011011-avatar {
+  width: 36px;
+  height: 36px;
+  background: rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(10px);
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.cdUser011011-avatar-img {
+  width: 18px;
+  height: 18px;
+  object-fit: contain;
+}
+
+.cdUser011011-header-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.cdUser011011-title {
+  font-size: 1rem;
+  font-weight: 700;
+  margin: 0;
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cdUser011011-subtitle {
+  font-size: 0.75rem;
+  margin: 2px 0 0 0;
+  opacity: 0.9;
+  font-weight: 400;
+  line-height: 1.2;
+  color: white;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cdUser011011-close {
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #fff;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+  touch-action: manipulation;
+  min-height: 44px;
+  min-width: 44px;
+}
+
+.cdUser011011-close:hover {
+  background: rgba(255, 255, 255, 0.25);
+  transform: rotate(90deg);
+}
+
+/* ===== CHAT BODY ===== */
+.cdUser011011-body {
+  background: linear-gradient(to bottom, #f9fafb 0%, #ffffff 100%);
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 1rem;
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+}
+
+.cdUser011011-body::-webkit-scrollbar {
+  width: 6px;
+}
+
+.cdUser011011-body::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.cdUser011011-body::-webkit-scrollbar-thumb {
+  background: #d1d5db;
+  border-radius: 10px;
+}
+
+.cdUser011011-body::-webkit-scrollbar-thumb:hover {
+  background: #9ca3af;
+}
+
+/* ===== MESSAGES ===== */
+.cdUser011011-messages-container {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.cdUser011011-message-row {
+  display: flex;
+  align-items: flex-end;
+  animation: cdUser011011-messageSlide 0.3s ease;
+  gap: 0.5rem;
+}
+
+.cdUser011011-message-left {
+  justify-content: flex-start;
+}
+
+.cdUser011011-message-right {
+  justify-content: flex-end;
+}
+
+/* ===== AVATARS ===== */
+.cdUser011011-avatar-bot,
+.cdUser011011-avatar-user {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
+}
+
+.cdUser011011-avatar-bot {
+  background: var(--primary-color);
+  color: #fff;
+}
+
+.cdUser011011-avatar-user {
+  background: color-mix(in srgb, var(--secondary-color) 12.5%, transparent);
+}
+
+/* ===== MESSAGE BUBBLES ===== */
+.cdUser011011-message {
+  padding: 0.75rem 1rem;
+  border-radius: 16px;
+  font-size: 0.875rem;
+  line-height: 1.4;
+  max-width: calc(100% - 100px);
+  word-wrap: break-word;
+  word-break: break-word;
+  position: relative;
+  animation: cdUser011011-messagePop 0.2s ease;
+}
+
+@media (max-width: 480px) {
+  .cdUser011011-message {
+    max-width: calc(100% - 80px);
+    padding: 0.625rem 0.875rem;
+    font-size: 0.8125rem;
+  }
+}
+
+@keyframes cdUser011011-messagePop {
+  0% {
+    transform: scale(0.9);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes cdUser011011-messageSlide {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.cdUser011011-message.bot {
+  background: color-mix(in srgb, var(--secondary-color) 12.5%, transparent);
+  color: #333;
+  border-bottom-left-radius: 4px;
+}
+
+.cdUser011011-message.user {
+  background: var(--primary-color);
+  color: #ffffff;
+  border-bottom-right-radius: 4px;
+}
+
+/* ===== TYPING INDICATOR ===== */
+.cdUser011011-typing-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 0;
+  color: var(--primary-color);
+}
+
+.cdUser011011-typing-dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  background: currentColor;
+  border-radius: 50%;
+  animation: cdUser011011-typingBounce 1.4s infinite ease-in-out both;
+}
+
+.cdUser011011-typing-dot:nth-child(1) {
+  animation-delay: -0.32s;
+}
+
+.cdUser011011-typing-dot:nth-child(2) {
+  animation-delay: -0.16s;
+}
+
+@keyframes cdUser011011-typingBounce {
+  0%,
+  80%,
+  100% {
+    transform: scale(0.8);
+    opacity: 0.5;
+  }
+  40% {
+    transform: scale(1.2);
+    opacity: 1;
+  }
+}
+
+/* ===== INPUT FOOTER ===== */
+.cdUser011011-footer {
+  background: #ffffff;
+  border-top: 1px solid #e5e7eb;
+  box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.04);
+  flex-shrink: 0;
+  padding: 0.75rem;
+}
+
+.cdUser011011-input-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+.cdUser011011-footer-input {
+  width: 100%;
+  padding: 0.875rem 3.5rem 0.875rem 1rem;
+  border-radius: 12px;
+  border: 1.5px solid var(--primary-color);
+  font-size: 0.9375rem;
+  outline: none;
+  transition: all 0.2s ease;
+  background: #f9fafb;
+  font-family: inherit;
+  line-height: 1.5;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.cdUser011011-footer-input:focus {
+  border-color: var(--primary-color);
+  background: #ffffff;
+  box-shadow:
+    0 0 0 3px rgba(16, 185, 129, 0.1),
+    0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.cdUser011011-footer-input::placeholder {
+  color: #9ca3af;
+}
+
+.cdUser011011-footer-send {
+  position: absolute;
+  top: 50%;
+  right: 6px;
+  transform: translateY(-50%);
+  background: var(--primary-color);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  width: 40px;
+  height: 40px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 6px rgba(16, 185, 129, 0.3);
+  touch-action: manipulation;
+  min-height: 44px;
+  min-width: 44px;
+}
+
+.cdUser011011-footer-send:hover {
+  transform: translateY(-50%) scale(1.05);
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+}
+
+.cdUser011011-footer-send:disabled {
+  background: #e2e8f0;
+  color: #a0aec0;
+  cursor: not-allowed;
+  box-shadow: none;
+  opacity: 0.6;
+}
+
+.cdUser011011-footer-send:active {
+  transform: translateY(-50%) scale(0.95);
+}
+
+/* ===== FALLBACK BUTTON ===== */
+.cdUser011011-fallback-btn {
+  background: white;
+  color: #000;
+  border: none;
+  border-radius: 20px;
+  padding: 0.75rem 1.25rem;
+  cursor: pointer;
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  display: inline-block;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.25);
+  touch-action: manipulation;
+  min-height: 44px;
+}
+
+.cdUser011011-fallback-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.35);
+  background: #fff;
+}
+
+/* ===== WATERMARK ===== */
+.cdUser011011-watermark {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 0.5rem;
+  background: #ffffff;
+  border-radius: 0 0 12px 12px;
+  margin-top: 1px;
+}
+
+.cdUser011011-watermark-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  text-decoration: none;
+  font-size: 10px;
+  color: #6b7280;
+  font-weight: 500;
+  opacity: 0.7;
+  transition: opacity 0.2s ease;
+  font-family: inherit;
+}
+
+.cdUser011011-watermark-link:hover {
+  opacity: 1;
+  color: var(--primary-color);
+}
+
+.cdUser011011-watermark-link span {
+  font-weight: 400;
+  color: #9ca3af;
+}
+
+.cdUser011011-watermark-link strong {
+  font-weight: 600;
+  color: #4b5563;
+}
+
+/* ===== MESSAGE FORMATTING ===== */
+.cdUser011011-chat-message {
+  line-height: 1.5;
+  font-size: 14px;
+  color: #333;
+}
+
+.cdUser011011-chat-message h1,
+.cdUser011011-chat-message h2,
+.cdUser011011-chat-message h3 {
+  margin: 8px 0 4px;
+  line-height: 1.3;
+}
+
+.cdUser011011-chat-message h1 {
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.cdUser011011-chat-message h2 {
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.cdUser011011-chat-message h3 {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.cdUser011011-chat-message p {
+  margin: 6px 0;
+}
+
+.cdUser011011-chat-message ul,
+.cdUser011011-chat-message ol {
+  padding-left: 20px;
+  margin: 6px 0;
+}
+
+.cdUser011011-chat-message li {
+  margin: 3px 0;
+}
+
+.cdUser011011-chat-message a {
+  color: #2563eb;
+  text-decoration: underline;
+  font-weight: 500;
+}
+
+.cdUser011011-chat-message a:hover {
+  text-decoration: none;
+}
+
+/* ===== TRANSITIONS ===== */
+.cdUser011011-fade-enter-active {
+  animation: cdUser011011-popupSlideIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.cdUser011011-fade-leave-active {
+  animation: cdUser011011-popupSlideOut 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes cdUser011011-popupSlideIn {
+  from {
+    transform: translateY(20px) scale(0.95);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes cdUser011011-popupSlideOut {
+  from {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+  to {
+    transform: translateY(20px) scale(0.95);
+    opacity: 0;
+  }
+}
+
+/* ===== SAFE AREA SUPPORT ===== */
+@supports (padding: max(0px)) {
+  .cdUser011011-wrapper.position-bottom-right,
+  .cdUser011011-wrapper.position-bottom-left {
+    bottom: max(1rem, env(safe-area-inset-bottom));
+    right: max(1rem, env(safe-area-inset-right));
+  }
+
+  .cdUser011011-wrapper.position-bottom-left {
+    left: max(1rem, env(safe-area-inset-left));
+  }
+
+  .cdUser011011-body {
+    padding-bottom: max(1rem, env(safe-area-inset-bottom));
+  }
+}
+
+/* ===== PORTRAIT/LANDSCAPE ADJUSTMENTS ===== */
+@media (orientation: landscape) and (max-height: 600px) {
+  .cdUser011011-popup-container {
+    height: calc(100vh - 60px);
+    max-height: 400px;
+  }
+}
+
+@media (orientation: portrait) and (max-height: 700px) {
+  .cdUser011011-popup-container {
+    height: calc(100vh - 80px);
+  }
+}
+
+/* ===== VERY SMALL DEVICES ===== */
+@media (max-width: 360px) {
+  :root {
+    --bubble-size: 48px;
+  }
+
+  .cdUser011011-popup-container {
+    width: calc(100vw - 1rem);
+  }
+
+  .cdUser011011-header {
+    padding: 0.5rem;
+    min-height: 52px;
+  }
+
+  .cdUser011011-body {
+    padding: 0.75rem;
+  }
+
+  .cdUser011011-message {
+    max-width: calc(100% - 70px);
+    font-size: 0.75rem;
+    padding: 0.5rem 0.75rem;
+  }
+
+  .cdUser011011-footer {
+    padding: 0.5rem;
+  }
+
+  .cdUser011011-footer-input {
+    padding: 0.75rem 3rem 0.75rem 0.75rem;
+    font-size: 0.875rem;
+  }
+
+  .cdUser011011-footer-send {
+    width: 36px;
+    height: 36px;
+  }
+}
+
+/* ===== DARK MODE SUPPORT ===== */
+@media (prefers-color-scheme: dark) {
+  .cdUser011011-popup {
+    background: #1f2937;
+  }
+
+  .cdUser011011-body {
+    background: linear-gradient(to bottom, #111827 0%, #1f2937 100%);
+  }
+
+  .cdUser011011-message.bot {
+    background: #374151;
+    color: #f3f4f6;
+  }
+
+  .cdUser011011-footer {
+    background: #1f2937;
+    border-top-color: #374151;
+  }
+
+  .cdUser011011-footer-input {
+    background: #374151;
+    color: #f3f4f6;
+    border-color: #4b5563;
+  }
+
+  .cdUser011011-footer-input::placeholder {
+    color: #9ca3af;
+  }
+
+  .cdUser011011-watermark {
+    background: #1f2937;
+  }
+
+  .cdUser011011-watermark-link {
+    color: #9ca3af;
+  }
+
+  .cdUser011011-watermark-link strong {
+    color: #d1d5db;
+  }
+
+  .cdUser011011-fallback-btn {
+    background: #374151;
+    color: #f3f4f6;
+  }
+}
+</style>

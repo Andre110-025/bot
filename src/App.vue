@@ -812,7 +812,7 @@ onBeforeUnmount(() => {
                   />
                 </svg>
                 <span>Powered by</span>
-                <strong>chatbotconvo.com</strong>
+                <strong>botconvo.com</strong>
               </a>
             </div>
           </div>
