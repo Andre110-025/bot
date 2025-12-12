@@ -47,6 +47,37 @@ const handleForm = () => {
     emit('form-complete')
   }, 3000)
 }
+
+onMounted(() => {
+  // Just get user ID (timer starts automatically)
+  userId.value = getUserId(props.website)
+
+  // Load messages if they exist (timer will clear later)
+  const storedMessages = localStorage.getItem(`messages_${userId.value}`)
+  if (storedMessages) {
+    try {
+      const data = JSON.parse(storedMessages)
+      messages.value = data.messages || getDefaultMessage()
+    } catch {
+      messages.value = getDefaultMessage()
+    }
+  }
+
+  // Check if user is signed in
+  showChat.value = !!localStorage.getItem('chatUser')
+
+  // Check admin mode
+  const adminMode = localStorage.getItem('adminMode')
+  showUserBotChat.value = !adminMode
+
+  // Show bubble after delay
+  setTimeout(() => {
+    showBubble.value = true
+  }, 3000)
+
+  // Fetch customization
+  getCustomization()
+})
 </script>
 
 <template>

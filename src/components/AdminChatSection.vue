@@ -189,23 +189,32 @@ const handleInputChange = () => {
 
 onMounted(async () => {
   const stored = localStorage.getItem(`chatMessages_${props.userId}`)
-  const oneDay = 1 * 24 * 60 * 60 * 1000
+  const oneDay = 10 * 60 * 1000
 
   // Check for expired session
+  // if (stored) {
+  //   const data = JSON.parse(stored)
+  //   if (!data.timestamp || Date.now() - data.timestamp > oneDay) {
+  //     // Session expired - clear everything and fetch fresh
+  //     console.log('Session expired, clearing and fetching fresh data')
+  //     clearSession()
+  //     emit('session-expired')
+  //     await fetchInitialMessages()
+  //     return
+  //   } else {
+  //     // Valid cached data - use it temporarily
+  //     chatMessages.value = data.chatMessages
+  //     await nextTick()
+  //     scrollToBottom()
+  //   }
+  // }
+
   if (stored) {
-    const data = JSON.parse(stored)
-    if (!data.timestamp || Date.now() - data.timestamp > oneDay) {
-      // Session expired - clear everything and fetch fresh
-      console.log('Session expired, clearing and fetching fresh data')
-      clearSession()
-      emit('session-expired')
-      await fetchInitialMessages()
-      return
-    } else {
-      // Valid cached data - use it temporarily
-      chatMessages.value = data.chatMessages
-      await nextTick()
-      scrollToBottom()
+    try {
+      const data = JSON.parse(stored)
+      chatMessages.value = data.chatMessages || []
+    } catch {
+      chatMessages.value = []
     }
   }
 

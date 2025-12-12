@@ -40,9 +40,9 @@ const handleForm = () => {
     const token = Math.random().toString(36).substring(2) + Date.now().toString(36)
     // console.log('Generated token:', token)
 
-    const expiresAt = Date.now() + 24 * 60 * 60 * 1000
+    // const expiresAt = Date.now() + 10 * 60 * 1000
 
-    localStorage.setItem('chatUser', JSON.stringify({ ...form, token, expiresAt }))
+    localStorage.setItem('chatUser', JSON.stringify({ ...form, token }))
     loading.value = false
     emit('form-complete')
   }, 3000)
