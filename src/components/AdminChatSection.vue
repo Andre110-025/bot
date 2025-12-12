@@ -89,6 +89,10 @@ const fetchInitialMessages = async () => {
   }
 }
 
+onMounted(() => {
+  fetchInitialMessages()
+})
+
 const sendMessage = async () => {
   if (!newMessage.value.trim() || sending.value) return
 
