@@ -21,8 +21,7 @@ const charTimers = {} // timing for all typing animation
 const lastUserMessage = ref('')
 const showUserBotChat = ref(true)
 const adminMessages = ref([])
-// let userId = localStorage.getItem('userId')
-// watch: reacts to reactive variable changes.
+
 const props = defineProps({
   website: {
     type: String,
@@ -38,21 +37,6 @@ const props = defineProps({
 
 const { hasUnreadMessages, unreadCount, clearUnreadMessages } = useChatNotifications()
 const userId = ref('')
-// onMounted(() => {
-//   userId.value = getUserId(props.website)
-//   console.log('UserID:', userId.value)
-// })
-// const userId = ref(localStorage.getItem('userId') || '')
-
-// onMounted(() => {
-//   if(!userId.value) {
-//     const generatedId = getUserId(props.website)
-//     userId.value = generatedId
-//     localStorage.setItem('userId', generatedId)
-//   }
-
-//   console.log('UserID:', userId.value)
-// })
 
 const togglePopup = () => {
   showPopup.value = !showPopup.value
@@ -65,15 +49,6 @@ const formatMessage = (text) => {
   const html = marked(text, { breaks: true })
   return DOMPurify.sanitize(html)
 }
-
-// const scrollToBottom = async () => {
-//   await nextTick()
-//   setTimeout(() => {
-//     if (chatContainer.value) {
-//       chatContainer.value.scrollTop = chatContainer.value.scrollHeight
-//     }
-//   }, 50)
-// }
 
 const scrollToBottom = () => {
   nextTick(() => {
@@ -90,17 +65,6 @@ const scrollToBottom = () => {
   })
 }
 
-// watch(
-//   messages,
-//   async () => {
-//     await nextTick()
-//     if (chatContainer.value) {
-//       chatContainer.value.scrollTop = chatContainer.value.scrollHeight
-//     }
-//   },
-//   { deep: true },
-// )
-
 watch(messages, scrollToBottom, { deep: true })
 watch(displayedTexts, scrollToBottom, { deep: true })
 // Run scrollToBottom whenever messages or anything inside it changes, not just when the array itself is reassigned.
@@ -114,15 +78,6 @@ const saveMessages = () => {
   }
   localStorage.setItem(`messages_${userId.value}`, JSON.stringify(payload))
 }
-
-// const saveMessages = () => {
-//   if (!userId) return
-//   const payload = {
-//     timestamp: Date.now(),
-//     messages: messages.value
-//   }
-//   localStorage.setItem(`messages_${userId}`, JSON.stringify(payload))
-// }
 
 const addMessage = (msg) => {
   messages.value.push(msg)
@@ -223,15 +178,6 @@ const getResponse = async (inputText) => {
   }
 }
 
-// console.log(userEmail)
-
-// const cleanWebsite = props.website
-//   .replace(/^https?:\/\//, '')
-//   .replace(/^www\./, '')
-//   .split('/')[0]
-
-// const userConvo = sessionId + cleanWebsite
-
 async function getGeminiResponse(userText) {
   try {
     const response = await axios.post(
@@ -256,142 +202,6 @@ async function getGeminiResponse(userText) {
 const showBubble = ref(false)
 
 const showChat = ref(false)
-// const clearAllExpiredSessions = () => {
-//   // console.log('🧹 Starting session cleanup...')
-
-//   const now = Date.now()
-
-//   // 🔥 ONLY CHECK chatUser - it's the SOURCE OF TRUTH
-//   const storedUser = localStorage.getItem('chatUser')
-
-//   if (!storedUser) {
-//     // No user session = clear all chat data
-//     // console.log('🧹 No user session found, cleaning up orphaned chat data')
-//     Object.keys(localStorage).forEach((key) => {
-//       if (key.startsWith('messages_') || key.startsWith('chatMessages_') || key === 'adminMode') {
-//         localStorage.removeItem(key)
-//       }
-//     })
-//     return
-//   }
-
-//   try {
-//     const userData = JSON.parse(storedUser)
-
-//     // If main session expired, CLEAR EVERYTHING
-//     if (now > userData.expiresAt) {
-//       // console.log('🧹 Session expired, clearing all related data...')
-
-//       // Get userId from user data
-//       const userId = userData.userId
-
-//       // Clear ALL chat-related data
-//       localStorage.removeItem('chatUser')
-//       localStorage.removeItem('adminMode')
-
-//       if (userId) {
-//         localStorage.removeItem(`messages_${userId}`)
-//         localStorage.removeItem(`chatMessages_${userId}`)
-//       }
-
-//       // Clean up any orphaned data
-//       Object.keys(localStorage).forEach((key) => {
-//         if (key.startsWith('messages_') || key.startsWith('chatMessages_')) {
-//           localStorage.removeItem(key)
-//         }
-//       })
-
-//       // console.log('✅ All expired data cleared')
-//     } else {
-//       // console.log('✅ Session is still valid')
-//     }
-//   } catch (e) {
-//     console.log('🧹 Corrupted user data, removing...')
-//     localStorage.removeItem('chatUser')
-//   }
-// }
-
-// const clearAllExpiredSessions = () => {
-//   const now = Date.now()
-//   const oneDay = 24 * 60 * 60 * 1000
-
-//   // console.log('Clearing expired sessions...')
-
-//   const storedUser = localStorage.getItem('chatUser')
-//   if (storedUser) {
-//     try {
-//       const data = JSON.parse(storedUser)
-//       if (now > data.expiresAt) {
-//         // console.log('Removing expired chatUser')
-//         localStorage.removeItem('chatUser')
-//       }
-//     } catch (e) {
-//       localStorage.removeItem('chatUser')
-//     }
-//   }
-
-//   if (userId.value) {
-//     const storedMessages = localStorage.getItem(`messages_${userId.value}`)
-//     if (storedMessages) {
-//       try {
-//         const data = JSON.parse(storedMessages)
-//         if (!data.timestamp || now - data.timestamp > oneDay) {
-//           // console.log('Removing expired bot messages')
-//           localStorage.removeItem(`messages_${userId.value}`)
-//         }
-//       } catch (e) {
-//         localStorage.removeItem(`messages_${userId.value}`)
-//       }
-//     }
-//   }
-
-//   const adminMode = localStorage.getItem('adminMode')
-//   if (adminMode) {
-//     try {
-//       const data = JSON.parse(adminMode)
-//       if (now > data.expiresAt) {
-//         // console.log('Removing expired adminMode')
-//         localStorage.removeItem('adminMode')
-//       }
-//     } catch (e) {
-//       localStorage.removeItem('adminMode')
-//     }
-//   }
-
-//   if (userId.value) {
-//     const storedAdminMessages = localStorage.getItem(`chatMessages_${userId.value}`)
-//     if (storedAdminMessages) {
-//       try {
-//         const data = JSON.parse(storedAdminMessages)
-//         if (!data.timestamp || now - data.timestamp > oneDay) {
-//           // console.log('Removing expired admin messages')
-//           localStorage.removeItem(`chatMessages_${userId.value}`)
-//         }
-//       } catch (e) {
-//         localStorage.removeItem(`chatMessages_${userId.value}`)
-//       }
-//     }
-//   }
-// }
-
-// onMounted(() => {
-//   const storedUser = localStorage.getItem('chatUser')
-
-//   if (storedUser) {
-//     const data = JSON.parse(storedUser)
-
-//     if (Date.now() > data.expiresAt) {
-//       // console.log('Token expired — clearing data')
-//       localStorage.removeItem('chatUser')
-//       showChat.value = false
-//     } else {
-//       // console.log('Valid token — skip form')
-//       showChat.value = true
-//     }
-//   } else {
-//     showChat.value = false
-//   }
-// })
 
 const handleFormComplete = () => {
   showChat.value = true
@@ -400,10 +210,6 @@ const handleFormComplete = () => {
 const handleAdminRedirect = () => {
   showUserBotChat.value = false
 }
-
-// const storedConversationId = localStorage.getItem('chat_user_id')
-// const conversationId = storedConversationId
-// const sessionId = conversationId
 
 const sendToAdmin = async (userMessage = '') => {
   let messageToSend = userMessage.trim()
@@ -427,37 +233,6 @@ const sendToAdmin = async (userMessage = '') => {
   })
   localStorage.setItem('adminMode', JSON.stringify({ active: true }))
 }
-
-// onMounted(() => {
-//   const saved = localStorage.getItem('adminMode')
-//   if (saved) {
-//     const data = JSON.parse(saved)
-//     if (Date.now() < data.expiresAt) {
-//       showUserBotChat.value = false
-//     } else {
-//       localStorage.removeItem('adminMode')
-//     }
-//   }
-// })
-
-// onMounted(() => {
-//   const stored = localStorage.getItem(`messages_${userId}`)
-//   const oneDay = 1 * 24 * 60 * 60 * 1000
-
-//   if (stored) {
-//     const data = JSON.parse(stored)
-//     if (!data.timestamp || Date.now() - data.timestamp > oneDay) {
-//       localStorage.removeItem(`messages_${userId}`)
-//       messages.value = [{ text: 'Hey there, I’m NexDre. How can I help you today?', sender: 'AI' }]
-//     } else {
-//       messages.value = data.messages
-//     }
-//   }
-// })
-
-// onBeforeUnmount(() => {
-//   Object.values(charTimers).forEach((t) => clearTimeout(t))
-// })
 
 const customization = ref(null)
 onMounted(async () => {
@@ -944,7 +719,7 @@ onBeforeUnmount(() => {
   right: 8px;
   width: 12px;
   height: 12px;
-  background: #34d399;
+  background: var(--primary-color);
   border-radius: 50%;
   border: 2px solid #fff;
   margin: 0;
